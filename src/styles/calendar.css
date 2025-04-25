@@ -1,0 +1,63 @@
+.rbc-calendar {
+  @apply font-sans;
+}
+
+.rbc-toolbar {
+  @apply mb-4;
+}
+
+.rbc-toolbar button {
+  @apply text-sm font-medium;
+}
+
+.rbc-header {
+  @apply py-2 font-medium border-b dark:border-slate-700;
+}
+
+.rbc-month-view {
+  @apply border-0;
+}
+
+.rbc-day-bg {
+  @apply dark:bg-slate-800;
+}
+
+.rbc-off-range-bg {
+  @apply dark:bg-slate-900/50;
+}
+
+.rbc-today {
+  @apply dark:bg-slate-700/50;
+}
+
+.rbc-event {
+  @apply bg-transparent border-0 p-0;
+}
+
+.rbc-event-content {
+  @apply h-full;
+}
+
+.rbc-show-more {
+  @apply dark:text-blue-400;
+}
+
+.rbc-time-view {
+  @apply dark:border-slate-700;
+}
+
+.rbc-time-header {
+  @apply dark:border-slate-700;
+}
+
+.rbc-time-content {
+  @apply dark:border-slate-700;
+}
+
+.rbc-time-slot {
+  @apply dark:text-slate-400;
+}
+
+.rbc-current-time-indicator {
+  @apply dark:bg-purple-500;
+}
