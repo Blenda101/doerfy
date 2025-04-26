@@ -105,7 +105,7 @@ export const Auth: React.FC = () => {
               },
             }}
             providers={['google', 'apple']}
-            redirectTo={`${window.location.origin}/auth/callback`}
+            redirectTo={`${window.location.origin}`}
             localization={{
               variables: {
                 sign_in: {
