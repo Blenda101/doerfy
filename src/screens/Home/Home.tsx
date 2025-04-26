@@ -18,15 +18,8 @@ import {
 } from "../../utils/storage";
 import { getWeather } from "../../utils/weather";
 import { Line } from "react-chartjs-2";
-import {
-  faTimebox1,
-  faTimebox30,
-  faTimebox7,
-} from "@awesome.me/kit-9001a4104b/icons/kit/custom";
-import {
-  FontAwesomeIcon,
-  FontAwesomeIconProps,
-} from "@fortawesome/react-fontawesome";
+
+
 
 import {
   Chart as ChartJS,
@@ -49,9 +42,15 @@ import {
   Filter,
   ListIcon,
   Settings,
+  CalendarIcon,
+  ListOrderedIcon,
+  ListStartIcon,
+  ListTodoIcon,
+  CalendarClockIcon,
+  CheckCircleIcon,
+  CalendarDaysIcon,
 } from "lucide-react";
 import { format } from "date-fns";
-import { faCalendar } from "@fortawesome/pro-light-svg-icons";
 
 ChartJS.register(
   CategoryScale,
@@ -534,14 +533,7 @@ export const Home: React.FC = () => {
                     "hover:bg-gray-50 dark:hover:bg-slate-700",
                   )}
                 >
-                  <FontAwesomeIcon
-                    icon={getIcon(task.timeStage)}
-                    size="lg"
-                    className={cn(
-                      "translate-y-[-1px] mr-1",
-                      theme === "dark" ? "text-slate-400" : "text-gray-500",
-                    )}
-                  />
+                  {getIcon(task.timeStage)}
                   <span
                     className={cn(
                       "flex-1",
@@ -552,7 +544,7 @@ export const Home: React.FC = () => {
                   </span>
                   <i
                     className={`flex items-center justify-center h-6 w-6 text-xs rounded-full ${getColor(
-                      task.agingStatus,
+                      task?.agingStatus,
                     )}`}
                   >
                     {task.status}
@@ -646,17 +638,17 @@ export const Home: React.FC = () => {
 function getIcon(stage: TimeStage) {
   switch (stage) {
     case "queue":
-      return faCalendar;
+      return <CalendarIcon className="h-6 w-6" />
     case "do":
-      return faTimebox30;
+      return <ListOrderedIcon className="h-6 w-6" />
     case "doing":
-      return faTimebox7;
+      return <ListStartIcon className="h-6 w-6" />
     case "today":
-      return faTimebox1;
+      return <CalendarDaysIcon className="h-6 w-6" /> 
     case "done":
-      return faTimebox1;
+      return <CheckCircleIcon className="h-6 w-6" /> 
     default:
-      return faTimebox1;
+      return <CalendarIcon className="h-6 w-6" /> 
   }
 }
 
