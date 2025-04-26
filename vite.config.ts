@@ -1,9 +1,13 @@
 import react from "@vitejs/plugin-react";
 import tailwind from "tailwindcss";
 import { defineConfig } from "vite";
+import svgr from 'vite-plugin-svgr'
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    svgr(),
+    react()
+  ],
   css: {
     postcss: {
       plugins: [tailwind()],
@@ -15,3 +19,4 @@ export default defineConfig({
     open: true
   }
 });
+

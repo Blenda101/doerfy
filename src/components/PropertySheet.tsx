@@ -42,8 +42,9 @@ export const PropertySheet: React.FC<PropertySheetProps> = ({
   theme = 'light',
   availableLists = []
 }) => {
-  const [isEditingTitle, setIsEditingTitle] = useState(() => !task.title.trim());
-  const [titleValue, setTitleValue] = useState(task.title);
+  const [isEditingTitle, setIsEditingTitle] = useState(() => !task?.title.trim());
+
+  const [titleValue, setTitleValue] = useState(task?.title);
   const [isHoveringTitle, setIsHoveringTitle] = useState(false);
   const [isSchedulerOpen, setIsSchedulerOpen] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
