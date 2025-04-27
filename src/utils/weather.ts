@@ -17,8 +17,9 @@ export async function getWeather(): Promise<WeatherData> {
     });
 
     // Create the URL for the OpenWeatherMap API
-    const apiKey = '89ac0d7bb131ea6239d65310f8579951'; // Free API key for demo
+    const apiKey = import.meta.env.VITE_WEATHER_API_KEY;
     const { latitude, longitude } = position.coords;
+    // this is the URL for the OpenWeatherMap API should be moved to the proxy server, otherwise it will be exposed to the API KEY
     const url = `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&units=imperial&appid=${apiKey}`;
 
     // Fetch weather data
