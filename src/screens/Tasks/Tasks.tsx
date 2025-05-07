@@ -1,34 +1,49 @@
-import React, { useState, useEffect } from 'react';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../components/ui/tabs';
-import { Sidebar } from '../../components/Sidebar';
-import { TasksHeader } from '../../components/TasksHeader';
-import { FilterHeader } from '../../components/FilterHeader';
-import { FilterPanel } from '../../components/FilterPanel';
-import { PropertySheet } from '../../components/PropertySheet';
-import { PtbTimeBox } from '../PtbTimeBox/PtbTimeBox';
-import { TaskList } from '../TaskList/TaskList';
-import { Calendar } from '../Calendar/Calendar';
-import { AddListDialog } from '../../components/AddListDialog';
-import { Theme, getInitialTheme, setTheme as setThemeUtil } from '../../utils/theme';
-import { useFilterStore } from '../../store/filterStore';
-import { supabase } from '../../utils/supabaseClient';
-import { cn } from '../../lib/utils';
-import { Filter, ListIcon, CalendarIcon } from 'lucide-react';
-import { toast } from 'react-hot-toast';
-import { Task } from '../../types/task';
+import React, { useState, useEffect } from "react";
+import {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+} from "../../components/ui/tabs";
+import { Sidebar } from "../../components/Sidebar";
+import { TasksHeader } from "../../components/TasksHeader";
+import { FilterHeader } from "../../components/FilterHeader";
+import { FilterPanel } from "../../components/FilterPanel";
+import { PropertySheet } from "../../components/PropertySheet";
+import { PtbTimeBox } from "../PtbTimeBox/PtbTimeBox";
+import { TaskList } from "../TaskList/TaskList";
+import { Calendar } from "../Calendar/Calendar";
+import { AddListDialog } from "../../components/AddListDialog";
+import {
+  Theme,
+  getInitialTheme,
+  setTheme as setThemeUtil,
+} from "../../utils/theme";
+import { useFilterStore } from "../../store/filterStore";
+import { supabase } from "../../utils/supabaseClient";
+import { cn } from "../../lib/utils";
+import { Filter, ListIcon, CalendarIcon } from "lucide-react";
+import { toast } from "react-hot-toast";
+import { Task } from "../../types/task";
 
 const STORAGE_KEYS = {
-  ACTIVE_TAB: 'activeTaskTab',
-  SELECTED_TASK: 'selectedTaskId',
+  ACTIVE_TAB: "activeTaskTab",
+  SELECTED_TASK: "selectedTaskId",
 };
 
 export const Tasks: React.FC = () => {
-  const [activeTab, setActiveTab] = useState(() => localStorage.getItem(STORAGE_KEYS.ACTIVE_TAB) || 'timebox');
+  const [activeTab, setActiveTab] = useState(
+    () => localStorage.getItem(STORAGE_KEYS.ACTIVE_TAB) || "timebox",
+  );
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
   const [theme, setTheme] = useState<Theme>(getInitialTheme);
   const [isAddListOpen, setIsAddListOpen] = useState(false);
-  const [activePanel, setActivePanel] = useState<'filter' | 'property' | null>(null);
-  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(() => localStorage.getItem(STORAGE_KEYS.SELECTED_TASK));
+  const [activePanel, setActivePanel] = useState<"filter" | "property" | null>(
+    null,
+  );
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(() =>
+    localStorage.getItem(STORAGE_KEYS.SELECTED_TASK),
+  );
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -56,40 +71,48 @@ export const Tasks: React.FC = () => {
         setIsLoading(true);
         setError(null);
 
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) throw new Error('No authenticated user found');
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!user) throw new Error("No authenticated user found");
 
         const { data, error } = await supabase
-          .from('tasks')
-          .select('*')
-          .eq('assignee', user.id)
-          .order('created_at', { ascending: false });
+          .from("tasks")
+          .select("*")
+          .eq("assignee", user.id)
+          .order("created_at", { ascending: false });
 
         if (error) throw error;
 
-        const transformedTasks = data?.map(task => ({
-          ...task,
-          showInTimeBox: task.show_in_time_box,
-          showInList: task.show_in_list,
-          showInCalendar: task.show_in_calendar,
-          timeStage: task.timestage,
-          agingStatus: task.aging_status,
-          stageEntryDate: task.stage_entry_date,
-          createdAt: task.created_at,
-          updatedAt: task.updated_at,
-          createdBy: task.created_by
-        })) || [];
+        const transformedTasks =
+          data?.map((task) => ({
+            ...task,
+            showInTimeBox: task.show_in_time_box,
+            showInList: task.show_in_list,
+            showInCalendar: task.show_in_calendar,
+            timeStage: task.timestage,
+            agingStatus: task.aging_status,
+            stageEntryDate: task.stage_entry_date,
+            createdAt: task.created_at,
+            updatedAt: task.updated_at,
+            createdBy: task.created_by,
+          })) || [];
 
         setTasks(transformedTasks);
 
-        if (selectedTaskId && !transformedTasks?.find(t => t.id === selectedTaskId)) {
+        if (
+          selectedTaskId &&
+          !transformedTasks?.find((t) => t.id === selectedTaskId)
+        ) {
           setSelectedTaskId(null);
           setActivePanel(null);
         }
       } catch (error) {
-        console.error('Error loading tasks:', error);
-        setError(error instanceof Error ? error.message : 'Failed to load tasks');
-        toast.error('Error loading tasks');
+        console.error("Error loading tasks:", error);
+        setError(
+          error instanceof Error ? error.message : "Failed to load tasks",
+        );
+        toast.error("Error loading tasks");
       } finally {
         setIsLoading(false);
       }
@@ -104,18 +127,18 @@ export const Tasks: React.FC = () => {
   };
 
   const handleFilterClick = () => {
-    setActivePanel(activePanel === 'filter' ? null : 'filter');
+    setActivePanel(activePanel === "filter" ? null : "filter");
     if (selectedTaskId) {
       setSelectedTaskId(null);
     }
   };
 
   const handleTaskSelect = (taskId: string) => {
-    if (activePanel === 'property' && selectedTaskId === taskId) {
+    if (activePanel === "property" && selectedTaskId === taskId) {
       setActivePanel(null);
       setSelectedTaskId(null);
     } else {
-      setActivePanel('property');
+      setActivePanel("property");
       setSelectedTaskId(taskId);
     }
   };
@@ -124,7 +147,7 @@ export const Tasks: React.FC = () => {
     try {
       setIsLoading(true);
       const { error } = await supabase
-        .from('tasks')
+        .from("tasks")
         .update({
           title: updatedTask.title,
           description: updatedTask.description,
@@ -144,41 +167,44 @@ export const Tasks: React.FC = () => {
           highlighted: updatedTask.highlighted,
           status: updatedTask.status,
           aging_status: updatedTask.agingStatus,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
-        .eq('id', updatedTask.id);
+        .eq("id", updatedTask.id);
 
       if (error) throw error;
 
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No authenticated user found');
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) throw new Error("No authenticated user found");
 
       const { data: refreshedTasks, error: refreshError } = await supabase
-        .from('tasks')
-        .select('*')
-        .eq('assignee', user.id)
-        .order('created_at', { ascending: false });
+        .from("tasks")
+        .select("*")
+        .eq("assignee", user.id)
+        .order("created_at", { ascending: false });
 
       if (refreshError) throw refreshError;
 
-      const transformedTasks = refreshedTasks?.map(task => ({
-        ...task,
-        showInTimeBox: task.show_in_time_box,
-        showInList: task.show_in_list,
-        showInCalendar: task.show_in_calendar,
-        timeStage: task.timestage,
-        agingStatus: task.aging_status,
-        stageEntryDate: task.stage_entry_date,
-        createdAt: task.created_at,
-        updatedAt: task.updated_at,
-        createdBy: task.created_by
-      })) || [];
+      const transformedTasks =
+        refreshedTasks?.map((task) => ({
+          ...task,
+          showInTimeBox: task.show_in_time_box,
+          showInList: task.show_in_list,
+          showInCalendar: task.show_in_calendar,
+          timeStage: task.timestage,
+          agingStatus: task.aging_status,
+          stageEntryDate: task.stage_entry_date,
+          createdAt: task.created_at,
+          updatedAt: task.updated_at,
+          createdBy: task.created_by,
+        })) || [];
 
       setTasks(transformedTasks);
-      toast.success('Task updated successfully');
+      toast.success("Task updated successfully");
     } catch (error) {
-      console.error('Error updating task:', error);
-      toast.error('Error updating task');
+      console.error("Error updating task:", error);
+      toast.error("Error updating task");
     } finally {
       setIsLoading(false);
     }
@@ -186,31 +212,57 @@ export const Tasks: React.FC = () => {
 
   const getHeaderProps = () => {
     switch (activeTab) {
-      case 'timebox':
-        return { title: 'Time Box', icon: <Filter />, addItemLabel: 'Add Time Box' };
-      case 'lists':
-        return { title: 'Lists', icon: <ListIcon />, addItemLabel: 'Add List', isAddListOpen, setIsAddListOpen };
-      case 'calendar':
-        return { title: 'Calendar', icon: <CalendarIcon />, addItemLabel: 'Add Event' };
+      case "timebox":
+        return {
+          title: "Time Box",
+          icon: <Filter />,
+          addItemLabel: "Add Time Box",
+        };
+      case "lists":
+        return {
+          title: "Lists",
+          icon: <ListIcon />,
+          addItemLabel: "Add List",
+          isAddListOpen,
+          setIsAddListOpen,
+        };
+      case "calendar":
+        return {
+          title: "Calendar",
+          icon: <CalendarIcon />,
+          addItemLabel: "Add Event",
+        };
       default:
-        return { title: 'Tasks', icon: <Filter />, addItemLabel: 'Add Task' };
+        return { title: "Tasks", icon: <Filter />, addItemLabel: "Add Task" };
     }
   };
 
-  const filteredTasks = filterTasks(tasks, activeTab as 'timebox' | 'lists' | 'calendar');
-  const selectedTask = tasks.find(t => t.id === selectedTaskId);
+  const filteredTasks = filterTasks(
+    tasks,
+    activeTab as "timebox" | "lists" | "calendar",
+  );
+  const selectedTask = tasks.find((t) => t.id === selectedTaskId);
 
   const tabs = (
     <TabsList className="bg-transparent border-b-0">
-      <TabsTrigger value="timebox" className="flex items-center gap-2 data-[state=active]:bg-transparent">
+      <TabsTrigger
+        value="timebox"
+        className="flex items-center gap-2 data-[state=active]:bg-transparent"
+      >
         <Filter className="w-4 h-4" />
         Time Box
       </TabsTrigger>
-      <TabsTrigger value="lists" className="flex items-center gap-2 data-[state=active]:bg-transparent">
+      <TabsTrigger
+        value="lists"
+        className="flex items-center gap-2 data-[state=active]:bg-transparent"
+      >
         <ListIcon className="w-4 h-4" />
         Lists
       </TabsTrigger>
-      <TabsTrigger value="calendar" className="flex items-center gap-2 data-[state=active]:bg-transparent">
+      <TabsTrigger
+        value="calendar"
+        className="flex items-center gap-2 data-[state=active]:bg-transparent"
+      >
         <CalendarIcon className="w-4 h-4" />
         Calendar
       </TabsTrigger>
@@ -218,16 +270,35 @@ export const Tasks: React.FC = () => {
   );
 
   return (
-    <div className={cn("flex h-screen", theme === 'dark' ? 'dark bg-[#0F172A]' : 'bg-white')}>
+    <div
+      className={cn(
+        "flex h-screen",
+        theme === "dark" ? "dark bg-[#0F172A]" : "bg-white",
+      )}
+    >
       <Sidebar
         isSidebarExpanded={isSidebarExpanded}
         theme={theme}
         onToggleSidebar={() => setIsSidebarExpanded(!isSidebarExpanded)}
-        onToggleTheme={() => setTheme(current => current === 'dark' ? 'light' : 'dark')}
+        onToggleTheme={() =>
+          setTheme((current) => (current === "dark" ? "light" : "dark"))
+        }
       />
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col h-full">
-        <TasksHeader {...getHeaderProps()} theme={theme} tabs={tabs} onFilterClick={handleFilterClick} />
-        <FilterHeader theme={theme} view={activeTab as 'timebox' | 'lists' | 'calendar'} />
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="flex-1 flex flex-col h-full"
+      >
+        <TasksHeader
+          {...getHeaderProps()}
+          theme={theme}
+          tabs={tabs}
+          onFilterClick={handleFilterClick}
+        />
+        <FilterHeader
+          theme={theme}
+          view={activeTab as "timebox" | "lists" | "calendar"}
+        />
         <div className="flex-1 flex overflow-hidden">
           <div className="flex-1 overflow-auto">
             {isLoading ? (
@@ -264,32 +335,38 @@ export const Tasks: React.FC = () => {
             )}
           </div>
 
-          {activePanel === 'filter' && (
-            <div className={cn(
-              "w-[400px] transition-transform duration-300 ease-in-out transform",
-              "border-l",
-              theme === 'dark' ? "border-[#334155]" : "border-gray-200"
-            )}>
+          {activePanel === "filter" && (
+            <div
+              className={cn(
+                "w-[400px] transition-transform duration-300 ease-in-out transform",
+                "border-l",
+                theme === "dark" ? "border-[#334155]" : "border-gray-200",
+              )}
+            >
               <FilterPanel
                 onClose={handlePanelClose}
-                view={activeTab as 'timebox' | 'lists' | 'calendar'}
+                view={activeTab as "timebox" | "lists" | "calendar"}
                 theme={theme}
               />
             </div>
           )}
 
-          {activePanel === 'property' && selectedTask && (
-            <div className={cn(
-              "w-[635px] transition-transform duration-300 ease-in-out transform",
-              "border-l",
-              theme === 'dark' ? "border-[#334155] bg-[#1E293B]" : "border-gray-200"
-            )}>
+          {activePanel === "property" && selectedTask && (
+            <div
+              className={cn(
+                "w-[500px] transition-transform duration-300 ease-in-out transform",
+                "border-l",
+                theme === "dark"
+                  ? "border-[#334155] bg-[#1E293B]"
+                  : "border-gray-200",
+              )}
+            >
               <PropertySheet
                 task={selectedTask}
                 onClose={handlePanelClose}
                 onTaskUpdate={handleTaskUpdate}
                 theme={theme}
-                availableLists={Array.from(new Set(tasks.map(t => t.list)))}
+                availableLists={Array.from(new Set(tasks.map((t) => t.list)))}
               />
             </div>
           )}
