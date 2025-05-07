@@ -6,11 +6,15 @@ import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
 import { ListIcon } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { supabase } from '../utils/supabaseClient';
+import { toast } from 'react-hot-toast';
 
 export interface ListConfig {
   id: string;
   name: string;
   description: string;
+  icon?: string;
+  color?: string;
 }
 
 interface AddListDialogProps {
@@ -28,13 +32,51 @@ export const AddListDialog: React.FC<AddListDialogProps> = ({
     id: crypto.randomUUID(),
     name: '',
     description: '',
+    icon: 'list',
+    color: 'gray'
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (config.name.trim()) {
-      onSave(config);
+    try {
+      if (!config.name.trim()) {
+        toast.error('List name is required');
+        return;
+      }
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('You must be logged in to create a list');
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('lists')
+        .insert({
+          name: config.name.trim(),
+          description: config.description.trim(),
+          icon: config.icon,
+          color: config.color,
+          owner_id: user.id
+        })
+        .select()
+        .single();
+
+      if (error) {
+        if (error.code === '23505') {
+          toast.error('A list with this name already exists');
+        } else {
+          throw error;
+        }
+        return;
+      }
+
+      onSave(data);
       onClose();
+      toast.success('List created successfully');
+    } catch (error) {
+      console.error('Error creating list:', error);
+      toast.error('Failed to create list');
     }
   };
 

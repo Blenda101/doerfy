@@ -9,7 +9,7 @@ import { Content } from "./screens/Content";
 import { Notes } from "./screens/Notes";
 import { Help } from "./screens/Help";
 import { Settings } from "./screens/Settings";
-import { Stories } from "./screens/Stories";
+import { Stories } from "./screens/Stories/Stories";
 import { Notifications } from "./screens/Notifications";
 import { AuthLayout } from "./components/AuthLayout";
 import { Toaster } from 'react-hot-toast';

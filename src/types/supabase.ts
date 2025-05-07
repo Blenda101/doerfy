@@ -17,7 +17,7 @@ export interface Database {
           time_stage: string
           stage_entry_date: string
           assignee: string
-          list: string
+          list_id: string
           priority: string
           energy: string
           location: string | null
@@ -30,6 +30,9 @@ export interface Database {
           created_at: string
           updated_at: string
           created_by: string
+          show_in_time_box: boolean
+          show_in_list: boolean
+          show_in_calendar: boolean
         }
         Insert: {
           id?: string
@@ -51,6 +54,9 @@ export interface Database {
           created_at?: string
           updated_at?: string
           created_by: string
+          show_in_time_box?: boolean
+          show_in_list?: boolean
+          show_in_calendar?: boolean
         }
         Update: {
           id?: string
@@ -59,7 +65,7 @@ export interface Database {
           time_stage?: string
           stage_entry_date?: string
           assignee?: string
-          list?: string
+          list_id?: string
           priority?: string
           energy?: string
           location?: string | null
@@ -72,6 +78,35 @@ export interface Database {
           created_at?: string
           updated_at?: string
           created_by?: string
+          show_in_time_box?: boolean
+          show_in_list?: boolean
+          show_in_calendar?: boolean
+        }
+      }
+      profiles: {
+        Row: {
+          id: string
+          avatar_url: string | null
+          updated_at: string | null
+          is_admin: boolean
+          first_name: string | null
+          last_name: string | null
+        }
+        Insert: {
+          id: string
+          avatar_url?: string | null
+          updated_at?: string | null
+          is_admin?: boolean
+          first_name?: string | null
+          last_name?: string | null
+        }
+        Update: {
+          id?: string
+          avatar_url?: string | null
+          updated_at?: string | null
+          is_admin?: boolean
+          first_name?: string | null
+          last_name?: string | null
         }
       }
       time_boxes: {
@@ -105,7 +140,12 @@ export interface Database {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_full_name: {
+        Args: {
+          profile_row: unknown
+        }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never

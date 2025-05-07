@@ -1,5 +1,3 @@
-import { TimeBox } from './timeBox';
-
 export type TimeStage = 'queue' | 'do' | 'doing' | 'today' | 'done';
 export type Priority = 'high' | 'medium' | 'low';
 export type Energy = 'high' | 'medium' | 'low';
@@ -24,6 +22,9 @@ export interface TaskSchedule {
   time: string;
   leadDays?: number;
   leadHours?: number;
+  durationDays?: number;
+  durationHours?: number;
+  alarmEnabled?: boolean;
   recurring?: {
     type: 'daily' | 'weekly' | 'monthly' | 'yearly';
     interval: number;
@@ -48,8 +49,8 @@ export interface Task {
   stageEntryDate: string;
   
   // Core Properties
-  assignee: string;
-  list: string;
+  assignee?: string;
+  listId?: string;
   priority: Priority;
   energy: Energy;
   location: string | null;
@@ -59,7 +60,12 @@ export interface Task {
   
   // Scheduling
   schedule?: TaskSchedule;
-  
+
+  isReoccurring?: boolean;
+  reoccurringPattern?: string | null;
+  dueDate?: string | null;
+  alarm?: boolean;
+
   // Metadata
   labels: string[];
   showInTimeBox: boolean;
@@ -106,7 +112,6 @@ export const SCHEDULING_THRESHOLDS = {
   today: { min: 0, max: 1 }
 } as const;
 
-// Helper function to generate valid UUIDs for tasks
 export function generateTaskId(): string {
   return crypto.randomUUID();
 }

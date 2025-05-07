@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from './ui/button';
 import { 
   DropdownMenu,
@@ -32,7 +32,6 @@ export const TasksHeader: React.FC<TasksHeaderProps> = ({
   title,
   icon,
   onAddItem,
-  addItemLabel = 'Add Item',
   theme = 'light',
   tabs,
   isAddListOpen,
@@ -75,6 +74,16 @@ export const TasksHeader: React.FC<TasksHeaderProps> = ({
         >
           <SlidersHorizontal className="w-5 h-5 text-gray-500 dark:text-gray-400" />
         </Button>
+        {onAddItem && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onAddItem}
+            className="h-10 w-10 rounded-full bg-[#5036b0] dark:bg-[#8B5CF6] hover:bg-[#3a2783] dark:hover:bg-[#7C3AED]"
+          >
+            <Plus className="w-5 h-5 text-white" />
+          </Button>
+        )}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="h-10 w-10">
@@ -82,12 +91,6 @@ export const TasksHeader: React.FC<TasksHeaderProps> = ({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            {onAddItem && (
-              <DropdownMenuItem onClick={onAddItem}>
-                <Plus className="w-4 h-4 mr-2" />
-                {addItemLabel}
-              </DropdownMenuItem>
-            )}
             {setIsAddListOpen && (
               <DropdownMenuItem onClick={() => setIsAddListOpen(true)}>
                 <ListIcon className="w-4 h-4 mr-2" />

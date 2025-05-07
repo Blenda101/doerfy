@@ -98,7 +98,7 @@ export const TaskHoverCard: React.FC<TaskHoverCardProps> = ({ task, children }) 
               <div className="flex justify-between items-center w-full">
                 <span className="text-sm text-gray-600 dark:text-gray-300">List:</span>
                 <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                  {task.list || 'None'}
+                  {task.listId || 'None'}
                 </span>
               </div>
             </div>

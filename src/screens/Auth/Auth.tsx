@@ -1,31 +1,28 @@
 import React from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Auth as SupabaseAuth } from '@supabase/auth-ui-react';
 import { ThemeSupa } from '@supabase/auth-ui-shared';
 import { supabase } from '../../utils/supabaseClient';
 
 export const Auth: React.FC = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const from = (location.state as any)?.from?.pathname || '/';
 
   React.useEffect(() => {
-    // Check if user is already authenticated
     const checkExistingSession = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
         if (error) {
-          // Clear potentially corrupted auth data
           localStorage.removeItem('supabase.auth.token');
           localStorage.removeItem('doerfy_tasks');
           navigate('/auth', { replace: true });
           return;
         }
         if (session) {
-          navigate(from, { replace: true });
+          const redirectPath = localStorage.getItem('redirectAfterAuth') || '/';
+          localStorage.removeItem('redirectAfterAuth');
+          navigate(redirectPath, { replace: true });
         }
       } catch (error) {
-        // Handle any unexpected errors
         localStorage.removeItem('supabase.auth.token');
         localStorage.removeItem('doerfy_tasks');
         navigate('/auth', { replace: true });
@@ -36,11 +33,11 @@ export const Auth: React.FC = () => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN') {
-        // Clear localStorage when signing in to prevent data conflicts
         localStorage.removeItem('doerfy_tasks');
-        navigate(from, { replace: true });
+        const redirectPath = localStorage.getItem('redirectAfterAuth') || '/';
+        localStorage.removeItem('redirectAfterAuth');
+        navigate(redirectPath, { replace: true });
       } else if (event === 'SIGNED_OUT') {
-        // Clear all auth-related data when signing out
         localStorage.removeItem('supabase.auth.token');
         localStorage.removeItem('doerfy_tasks');
         navigate('/auth', { replace: true });
@@ -50,7 +47,7 @@ export const Auth: React.FC = () => {
     return () => {
       subscription.unsubscribe();
     };
-  }, [navigate, from]);
+  }, [navigate]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-900 py-12 px-4 sm:px-6 lg:px-8">
