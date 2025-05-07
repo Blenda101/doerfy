@@ -124,17 +124,17 @@ export const TaskList: React.FC<TaskListProps> = ({
         .update({
           title: updatedTask.title,
           description: updatedTask.description,
-          timestage: updatedTask.timestage,
-          stage_entry_date: updatedTask.stage_entry_date,
+          timestage: updatedTask.timeStage,
+          stage_entry_date: updatedTask.stageEntryDate,
           list: updatedTask.list,
           priority: updatedTask.priority,
           energy: updatedTask.energy,
           location: updatedTask.location,
           story: updatedTask.story,
           labels: updatedTask.labels,
-          show_in_time_box: updatedTask.show_in_time_box,
-          show_in_list: updatedTask.show_in_list,
-          show_in_calendar: updatedTask.show_in_calendar,
+          show_in_time_box: updatedTask.showInTimeBox,
+          show_in_list: updatedTask.showInList,
+          show_in_calendar: updatedTask.showInCalendar,
           updated_at: new Date().toISOString()
         })
         .eq('id', updatedTask.id);
@@ -291,7 +291,7 @@ export const TaskList: React.FC<TaskListProps> = ({
                       onMouseLeave={() => setHoveredTaskId(null)}
                     >
                       <Checkbox
-                        checked={task.timestage === "done"}
+                        checked={task.timeStage === "done"}
                         onCheckedChange={() => handleTaskComplete(task.id)}
                         className="mt-1"
                         onClick={(e) => e.stopPropagation()}
@@ -315,7 +315,7 @@ export const TaskList: React.FC<TaskListProps> = ({
                               theme === "dark"
                                 ? "text-gray-200"
                                 : "text-gray-700",
-                              task.timestage === "done" &&
+                              task.timeStage === "done" &&
                                 "line-through opacity-50",
                             )}
                           >
