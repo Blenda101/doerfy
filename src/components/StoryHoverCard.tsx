@@ -68,7 +68,7 @@ export const StoryHoverCard: React.FC<StoryHoverCardProps> = ({ story, children 
               <div className="flex justify-between items-center w-full">
                 <span className="text-sm text-gray-600 dark:text-gray-300">Due Date:</span>
                 <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                  {formatDate(story.dueDate)}
+                  {(story?.dueDate ? formatDate(story.dueDate): "None")}
                 </span>
               </div>
             </div>

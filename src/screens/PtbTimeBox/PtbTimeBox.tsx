@@ -94,7 +94,7 @@ export const PtbTimeBox: React.FC<PtbTimeBoxProps> = ({
   const handleTaskSelect = (task: Task) => {
     if (editingTaskId !== task.id) {
       onTaskSelect?.(task.id);
-      setActiveTimeStage(task.timestage as TimeBoxStage);
+      setActiveTimeStage(task.timeStage as TimeBoxStage);
       setEditingTaskId(null);
     }
   };
@@ -106,7 +106,7 @@ export const PtbTimeBox: React.FC<PtbTimeBoxProps> = ({
       }
       
       const newTask = await createNewTask('personal', title, timeStage);
-      if (!newTask.timestage) {
+      if (!newTask.timeStage) {
         throw new Error('Task creation failed: timestage is missing');
       }
       
@@ -168,7 +168,7 @@ export const PtbTimeBox: React.FC<PtbTimeBoxProps> = ({
       }
 
       const newTask = await createNewTask('personal', todo.title, timeStage);
-      if (!newTask.timestage) {
+      if (!newTask.timeStage) {
         throw new Error('Task creation failed: timestage is missing');
       }
 
@@ -213,7 +213,7 @@ export const PtbTimeBox: React.FC<PtbTimeBoxProps> = ({
   };
 
   const getTasksByStage = (stage: TimeBoxStage) => {
-    const stageTasks = tasks.filter(task => task.timestage === stage && task.show_in_time_box);
+    const stageTasks = tasks.filter(task => task.timeStage === stage && task.showInTimeBox);
     return stageTasks;
   };
 

@@ -9,14 +9,13 @@ import { Switch } from './ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { format } from 'date-fns';
 import DatePicker from 'react-datepicker';
-import "react-datepicker/dist/react-datepicker.css";
 import { CalendarIcon, Clock, RepeatIcon, Bell, HelpCircle } from 'lucide-react';
 import { TaskSchedule } from '../types/task';
 import { cn } from '../lib/utils';
 
 interface TaskSchedulerProps {
   schedule: TaskSchedule | null;
-  onChange: (schedule: TaskSchedule | null) => void;
+  onChange: (schedule: TaskSchedule) => void;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -194,7 +193,7 @@ export const TaskScheduler: React.FC<TaskSchedulerProps> = ({
                   {selectedTab === 'custom' ? (
                     <DatePicker
                       selected={currentSchedule.date}
-                      onChange={(date) => setCurrentSchedule(prev => ({ ...prev, date }))}
+                      onChange={(date: Date) => setCurrentSchedule(prev => ({ ...prev, date }))}
                       customInput={
                         <Input
                           className={cn(
@@ -342,7 +341,7 @@ export const TaskScheduler: React.FC<TaskSchedulerProps> = ({
                     setCurrentSchedule(prev => ({
                       ...prev,
                       recurring: {
-                        type: value as TaskSchedule['recurring']['type'],
+                        type: value as NonNullable<TaskSchedule['recurring']>['type'],
                         interval: 1,
                         ends: {
                           type: 'endless'
@@ -469,7 +468,7 @@ export const TaskScheduler: React.FC<TaskSchedulerProps> = ({
                     <div className="mt-2">
                       <DatePicker
                         selected={currentSchedule.recurring.ends.date}
-                        onChange={(date) => setCurrentSchedule(prev => ({
+                        onChange={(date: Date) => setCurrentSchedule(prev => ({
                           ...prev,
                           recurring: {
                             ...prev.recurring!,

@@ -176,7 +176,7 @@ export const StoryTable: React.FC<StoryTableProps> = ({
                 )}
               </TableCell>
               <TableCell>
-                {story.childCount > 0 && (
+                {story.childCount! > 0 && (
                   <Button
                     variant="ghost"
                     size="sm"

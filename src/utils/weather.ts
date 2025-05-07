@@ -1,5 +1,9 @@
 import { toast } from 'react-hot-toast';
 
+if (!import.meta.env.VITE_WEATHER_API_KEY) {
+  throw new Error('Missing environment variable: VITE_WEATHER_API_KEY');
+}
+
 interface WeatherData {
   temperature: string;
   error?: string;

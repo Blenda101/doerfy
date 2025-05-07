@@ -134,7 +134,7 @@ export const StoryCard: React.FC<StoryCardProps> = ({
       <div className="flex items-center justify-between mt-4">
         <div className="flex items-center space-x-2">
           <Info className="h-4 w-4 text-gray-400" />
-          {story.childCount > 0 && (
+          {story && story.childCount! > 0 && (
             <Button
               variant="ghost"
               size="sm"

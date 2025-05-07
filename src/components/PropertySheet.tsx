@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { format } from 'date-fns';
-import { Task } from '../types/task';
+import { Task, TaskSchedule } from '../types/task';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Separator } from './ui/separator';
@@ -88,7 +88,7 @@ export const PropertySheet: React.FC<PropertySheetProps> = ({
     onTaskUpdate({ 
       ...task, 
       ...updates,
-      updated_at: new Date().toISOString()
+      updatedAt: new Date().toISOString()
     });
   };
 
@@ -121,7 +121,11 @@ export const PropertySheet: React.FC<PropertySheetProps> = ({
     handleTaskUpdate({ labels: newLabels });
   };
 
-  const handleScheduleChange = (schedule: Task['schedule']) => {
+  
+  // const handleScheduleChange = (schedule: Task['schedule']) => {
+  //   handleTaskUpdate({ schedule });
+  // };
+  const handleScheduleChange = (schedule: TaskSchedule) => {
     handleTaskUpdate({ schedule });
   };
 
@@ -218,9 +222,9 @@ export const PropertySheet: React.FC<PropertySheetProps> = ({
 
               <EditableProperty
                 label=""
-                value={task.timestage.charAt(0).toUpperCase() + task.timestage.slice(1)}
+                value={task.timeStage.charAt(0).toUpperCase() + task.timeStage.slice(1)}
                 options={['Queue', 'Do', 'Doing', 'Today', 'Done']}
-                onChange={(value) => handleTaskUpdate({ timestage: value.toLowerCase() as Task['timestage'] })}
+                onChange={(value) => handleTaskUpdate({ timeStage: value.toLowerCase() as Task['timeStage'] })}
                 className={cn(
                   "h-9 rounded text-base",
                   theme === 'dark' ? "bg-slate-700" : "bg-[#efefef]"
@@ -276,7 +280,7 @@ export const PropertySheet: React.FC<PropertySheetProps> = ({
             <RichTextEditor
               content={task.description}
               onChange={(content) => handleTaskUpdate({ description: content })}
-              theme={theme}
+              // theme={theme}
             />
           </div>
 
@@ -420,9 +424,9 @@ export const PropertySheet: React.FC<PropertySheetProps> = ({
                 "mt-16 text-base",
                 theme === 'dark' ? "text-slate-400" : "text-[#6f6f6f]"
               )}>
-                Created {new Date(task.created_at).toLocaleString()}
+                Created {new Date(task.createdAt).toLocaleString()}
                 <br />
-                Updated {new Date(task.updated_at).toLocaleString()}
+                Updated {new Date(task.updatedAt).toLocaleString()}
               </div>
             </TabsContent>
 
@@ -434,8 +438,8 @@ export const PropertySheet: React.FC<PropertySheetProps> = ({
                     theme === 'dark' ? "text-slate-200" : "text-gray-700"
                   )}>
                     <Checkbox
-                      checked={task.show_in_time_box}
-                      onCheckedChange={(checked) => handleTaskUpdate({ show_in_time_box: checked === true })}
+                      checked={task.showInTimeBox}
+                      onCheckedChange={(checked) => handleTaskUpdate({ showInTimeBox: checked === true })}
                       className="dark:border-slate-600"
                     />
                     <span>Show in Time Box</span>
@@ -447,8 +451,8 @@ export const PropertySheet: React.FC<PropertySheetProps> = ({
                     theme === 'dark' ? "text-slate-200" : "text-gray-700"
                   )}>
                     <Checkbox
-                      checked={task.show_in_list}
-                      onCheckedChange={(checked) => handleTaskUpdate({ show_in_list: checked === true })}
+                      checked={task.showInList}
+                      onCheckedChange={(checked) => handleTaskUpdate({ showInList: checked === true })}
                       className="dark:border-slate-600"
                     />
                     <span>Show in List</span>
@@ -460,8 +464,8 @@ export const PropertySheet: React.FC<PropertySheetProps> = ({
                     theme === 'dark' ? "text-slate-200" : "text-gray-700"
                   )}>
                     <Checkbox
-                      checked={task.show_in_calendar}
-                      onCheckedChange={(checked) => handleTaskUpdate({ show_in_calendar: checked === true })}
+                      checked={task.showInCalendar}
+                      onCheckedChange={(checked) => handleTaskUpdate({ showInCalendar: checked === true })}
                       className="dark:border-slate-600"
                     />
                     <span>Show in Calendar</span>
