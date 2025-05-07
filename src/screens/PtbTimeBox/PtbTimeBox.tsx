@@ -105,7 +105,7 @@ export const PtbTimeBox: React.FC<PtbTimeBoxProps> = ({
         throw new Error('timeStage is required');
       }
       
-      const newTask = await createNewTask('personal', title, timeStage);
+      const newTask = await createNewTask(title, timeStage);
       if (!newTask.timeStage) {
         throw new Error('Task creation failed: timestage is missing');
       }
@@ -167,7 +167,7 @@ export const PtbTimeBox: React.FC<PtbTimeBoxProps> = ({
         throw new Error('timeStage is required');
       }
 
-      const newTask = await createNewTask('personal', todo.title, timeStage);
+      const newTask = await createNewTask(todo.title, timeStage);
       if (!newTask.timeStage) {
         throw new Error('Task creation failed: timestage is missing');
       }

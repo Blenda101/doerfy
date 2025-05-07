@@ -50,7 +50,7 @@ export interface Task {
   
   // Core Properties
   assignee?: string;
-  list: string;
+  listId?: string;
   priority: Priority;
   energy: Energy;
   location: string | null;

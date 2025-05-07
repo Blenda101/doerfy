@@ -1,7 +1,7 @@
 import { Task } from '../types/task';
 import { supabase } from './supabaseClient';
 
-export async function createNewTask(list: string, title: string = '', timestage: string = 'queue'): Promise<Task> {
+export async function createNewTask(title: string = '', timestage: string = 'queue'): Promise<Task> {
   try {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
@@ -22,7 +22,7 @@ export async function createNewTask(list: string, title: string = '', timestage:
       timestage: timestage,
       stage_entry_date: now,
       assignee: user.id,
-      list,
+      // list_id: list_id,
       priority: 'medium',
       energy: 'medium',
       location: null,
@@ -38,6 +38,7 @@ export async function createNewTask(list: string, title: string = '', timestage:
       created_by: user.id
     };
 
+    console.log('Creating new task:', task);
     const { data, error } = await supabase
       .from('tasks')
       .insert(task)
@@ -55,7 +56,7 @@ export async function createNewTask(list: string, title: string = '', timestage:
       timeStage: data.timestage,
       stageEntryDate: data.stage_entry_date,
       assignee: data.assignee,
-      list: data.list,
+      listId: data.list_id,
       priority: data.priority,
       energy: data.energy,
       location: data.location,

@@ -17,7 +17,7 @@ export interface Database {
           time_stage: string
           stage_entry_date: string
           assignee: string
-          list: string
+          list_id: string
           priority: string
           energy: string
           location: string | null
@@ -65,7 +65,7 @@ export interface Database {
           time_stage?: string
           stage_entry_date?: string
           assignee?: string
-          list?: string
+          list_id?: string
           priority?: string
           energy?: string
           location?: string | null

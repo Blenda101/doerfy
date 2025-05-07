@@ -375,9 +375,9 @@ export const PropertySheet: React.FC<PropertySheetProps> = ({
 
                 <EditableProperty
                   label="List"
-                  value={task.list || ''}
+                  value={task.listId || ''}
                   options={availableLists}
-                  onChange={(value) => handleTaskUpdate({ list: value })}
+                  onChange={(value) => handleTaskUpdate({ listId: value })}
                   disabled={availableLists.length === 0}
                 />
 
