@@ -28,6 +28,7 @@ import { Theme } from '../../utils/theme';
 import { TaskHoverCard } from '../../components/TaskHoverCard';
 import { createNewTask } from '../../utils/taskUtils';
 import { toast } from 'react-hot-toast';
+import { en } from '@supabase/auth-ui-shared';
 
 interface List {
   id: string;
@@ -57,6 +58,7 @@ export const TaskList: React.FC<TaskListProps> = ({
   const [newTaskList, setNewTaskList] = useState<string | null>(null);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [activeList, setActiveList] = useState<string | null>(null);
+  const [newTaskId, setNewTaskId] = useState<string | null>(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -64,8 +66,10 @@ export const TaskList: React.FC<TaskListProps> = ({
         setIsLoading(true);
         setError(null);
 
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) throw new Error('No authenticated user found');
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError || !user) {
+          throw new Error('No authenticated user found');
+        }
 
         // Load lists
         const { data: listsData, error: listsError } = await supabase
@@ -77,7 +81,6 @@ export const TaskList: React.FC<TaskListProps> = ({
         if (listsError) throw listsError;
         setLists(listsData || []);
 
-        console.log('Loaded lists:', listsData);
         // Load tasks
         const { data: tasksData, error: tasksError } = await supabase
           .from('tasks')
@@ -106,8 +109,6 @@ export const TaskList: React.FC<TaskListProps> = ({
           history: []
         })) || [];
 
-        console.log('Loaded Transformed tasks:', transformedTasks);
-
         setTasks(transformedTasks);
       } catch (error) {
         console.error('Error loading data:', error);
@@ -123,15 +124,8 @@ export const TaskList: React.FC<TaskListProps> = ({
 
   const tasksByList = tasks.reduce((acc, task) => {
     const list = lists.find(l => l.id === task.listId);
-    if(task.listId){
-      console.log('Task:', task);
-    console.log('List:', list);
-    console.log('List ID:', task.listId);
-    console.log('Task ID:', task.id);
-    }
-    
     if (!list) return acc;
-    
+
     if (!acc[list.id]) {
       acc[list.id] = {
         list,
@@ -142,8 +136,6 @@ export const TaskList: React.FC<TaskListProps> = ({
     return acc;
   }, {} as Record<string, { list: List; tasks: Task[] }>);
 
-  console.log('Tasks by list:', tasksByList);
-
   const handleTaskComplete = async (taskId: string) => {
     try {
       const { error } = await supabase
@@ -153,7 +145,7 @@ export const TaskList: React.FC<TaskListProps> = ({
 
       if (error) throw error;
 
-      setTasks(tasks.map(task => 
+      setTasks(tasks.map(task =>
         task.id === taskId ? { ...task, timeStage: 'done' } : task
       ));
     } catch (error) {
@@ -188,6 +180,7 @@ export const TaskList: React.FC<TaskListProps> = ({
           show_in_time_box: updatedTask.showInTimeBox,
           show_in_list: updatedTask.showInList,
           show_in_calendar: updatedTask.showInCalendar,
+          aging_status: updatedTask.agingStatus,
           updated_at: new Date().toISOString()
         })
         .eq('id', updatedTask.id);
@@ -204,35 +197,44 @@ export const TaskList: React.FC<TaskListProps> = ({
     }
   };
 
-  const handleNewTask = async (listId: string) => {
+  const handleNewTask = async (listId: string, title: string) => {
+    if (!title.trim()) {
+      toast.error("Task title cannot be empty.");
+      return;
+    }
+
     try {
       const list = lists.find(l => l.id === listId);
-      if (!list) throw new Error('List not found');
+      if (!list) throw new Error("List not found");
 
-      const newTask = await createNewTask(list.name);
-      newTask.listId = listId;
-      
-      const { error } = await supabase
-        .from('tasks')
-        .insert({
-          ...newTask,
-          timestage: newTask.timeStage,
-          stage_entry_date: newTask.stageEntryDate,
-          show_in_time_box: newTask.showInTimeBox,
-          show_in_list: newTask.showInList,
-          show_in_calendar: newTask.showInCalendar
-        });
-
-      if (error) throw error;
+      const newTask = await createNewTask(title, "queue", listId);
 
       setTasks([newTask, ...tasks]);
-      setNewTaskList(listId);
-      setEditingTaskId(newTask.id);
-      setNewTaskTitle('');
+      setNewTaskId(newTask.id); // <-- Track it
+      setNewTaskTitle(newTask.title); // Optionally
       setActiveList(listId);
     } catch (error) {
-      console.error('Error creating new task:', error);
-      toast.error('Failed to create task');
+      console.error("Error creating new task:", error);
+      toast.error("Failed to create task");
+    }
+  };
+
+  const handleUpdateTask = async (taskId: string, newTitle: string) => {
+    try {
+      const { error } = await supabase
+        .from("tasks")
+        .update({ title: newTitle, updated_at: new Date().toISOString() })
+        .eq("id", taskId);
+  
+      if (error) throw error;
+  
+      setTasks(prev =>
+        prev.map(task => (task.id === taskId ? { ...task, title: newTitle } : task))
+      );
+      
+    } catch (error) {
+      console.error("Error updating task:", error);
+      toast.error("Failed to update task");
     }
   };
 
@@ -240,7 +242,7 @@ export const TaskList: React.FC<TaskListProps> = ({
     try {
       const { error } = await supabase
         .from('tasks')
-        .update({ 
+        .update({
           title: title.trim(),
           updated_at: new Date().toISOString()
         })
@@ -299,150 +301,183 @@ export const TaskList: React.FC<TaskListProps> = ({
       <div className="flex-1 flex flex-col">
         <div className="flex-1 px-6 py-4 overflow-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {Object.entries(tasksByList).map(([listId, { list, tasks }]) => (
-              <div
-                key={listId}
-                className={cn(
-                  "space-y-4",
-                  activeList === listId && "col-span-2"
-                )}
-              >
-                <div className="flex items-center border-b pb-4 dark:border-slate-700">
-                  <div
-                    className="flex items-center flex-1 cursor-pointer"
-                    onClick={() => setActiveList(listId)}
-                  >
-                    <h2
-                      className={cn(
-                        "text-lg font-semibold capitalize",
-                        listId === activeList
-                          ? theme === "dark"
-                            ? "text-[#8B5CF6]"
-                            : "text-[#5036b0]"
-                          : theme === "dark"
-                          ? "text-gray-200"
-                          : "text-gray-800",
-                      )}
-                    >
-                      {list.name}
-                    </h2>
-                    <Badge
-                      className={cn(
-                        "ml-2 bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-200",
-                      )}
-                    >
-                      {tasks.length}
-                    </Badge>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="ml-2 h-8 w-8"
-                    onClick={() => handleNewTask(listId)}
-                  >
-                    <Plus className="w-4 h-4" />
-                  </Button>
-                </div>
-                <div className="space-y-2">
-                  {tasks.map((task) => (
+            {lists.map((list) => {
+              const listTasks = tasksByList[list.id]?.tasks || [];
+              return (
+                <div
+                  key={list.id}
+                  className={cn(
+                    "space-y-4",
+                    activeList === list.id && "col-span-2"
+                  )}
+                >
+                  {/* Header */}
+                  <div className="flex items-center border-b pb-4 dark:border-slate-700">
                     <div
-                      key={task.id}
-                      className={cn(
-                        "flex items-start space-x-2 p-2 rounded-lg",
-                        "hover:bg-gray-50 dark:hover:bg-gray-800",
-                        "cursor-pointer",
-                        selectedTask?.id === task.id && "bg-gray-50 dark:bg-gray-800"
-                      )}
-                      onClick={() => handleTaskSelect(task)}
-                      onDoubleClick={() => {
-                        setEditingTaskId(task.id);
-                        setNewTaskTitle(task.title);
+                      className="flex items-center flex-1 cursor-pointer"
+                      onClick={() => setActiveList(list.id)}
+                    >
+                      <h2
+                        className={cn(
+                          "text-lg font-semibold capitalize",
+                          list.id === activeList
+                            ? theme === "dark"
+                              ? "text-[#8B5CF6]"
+                              : "text-[#5036b0]"
+                            : theme === "dark"
+                              ? "text-gray-200"
+                              : "text-gray-800",
+                        )}
+                      >
+                        {list.name}
+                      </h2>
+                      <Badge
+                        className={cn(
+                          "ml-2 bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-200",
+                        )}
+                      >
+                        {listTasks.length}
+                      </Badge>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="ml-2 h-8 w-8"
+                      onClick={() => {
+                        setEditingTaskId("new");
+                        setNewTaskList(list.id);
+                        setNewTaskTitle("");
                       }}
                     >
-                      <Checkbox
-                        checked={task.timeStage === "done"}
-                        onCheckedChange={() => handleTaskComplete(task.id)}
-                        className="mt-1"
-                        onClick={(e) => e.stopPropagation()}
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                  </div>
+
+                  {/* Task Area */}
+                  <div className="space-y-2">
+                    {/* ✅ New task editor at top */}
+                    {editingTaskId === "new" && newTaskList === list.id && (
+                      <InlineTaskEditor
+                        value={newTaskTitle}
+                        onChange={setNewTaskTitle}
+                        onSave={() => {
+                          const trimmed = newTaskTitle.trim();
+                          if (!trimmed) return;
+                          console.log("Creating trimmed task:", trimmed);
+                          console.log("New task ID:", newTaskId);
+
+                          if (newTaskId) {
+                            handleUpdateTask(newTaskId, trimmed);
+                          } else {
+                            handleNewTask(list.id, trimmed);
+                          }
+                        }}
+                        onCancel={() => {
+                          setEditingTaskId(null);
+                          setNewTaskTitle("");
+                        }}
+                        className="flex-1"
                       />
-                      {editingTaskId === task.id ? (
-                        <InlineTaskEditor
-                          value={newTaskTitle}
-                          onChange={setNewTaskTitle}
-                          onSave={() => handleTaskTitleUpdate(task.id, newTaskTitle)}
-                          onCancel={() => {
-                            setEditingTaskId(null);
-                            setNewTaskTitle(task.title);
-                          }}
-                          className="flex-1"
+                    )}
+
+                    {/* 🔁 Existing tasks */}
+                    {listTasks.map((task) => (
+                      <div
+                        key={task.id}
+                        className={cn(
+                          "flex items-start space-x-2 p-2 rounded-lg",
+                          "hover:bg-gray-50 dark:hover:bg-gray-800",
+                          "cursor-pointer",
+                          selectedTask?.id === task.id && "bg-gray-50 dark:bg-gray-800"
+                        )}
+                        onClick={() => handleTaskSelect(task)}
+                        onDoubleClick={() => {
+                          setEditingTaskId(task.id);
+                          setNewTaskTitle(task.title);
+                        }}
+                      >
+                        <Checkbox
+                          checked={task.timeStage === "done"}
+                          onCheckedChange={() => handleTaskComplete(task.id)}
+                          className="mt-1"
+                          onClick={(e) => e.stopPropagation()}
                         />
-                      ) : (
-                        <>
-                          <span
-                            className={cn(
-                              "text-sm flex-1",
-                              theme === "dark"
-                                ? "text-gray-200"
-                                : "text-gray-700",
-                              task.timeStage === "done" &&
-                                "line-through opacity-50",
-                            )}
-                          >
-                            {task.title}
-                          </span>
-                          <div className="flex items-center gap-2">
-                            <TaskHoverCard task={task}>
-                              <InfoIcon
-                                size={16}
-                                className="text-gray-400 dark:text-slate-500 cursor-pointer hover:text-gray-600 dark:hover:text-slate-300"
-                                onClick={(e) => e.stopPropagation()}
-                              />
-                            </TaskHoverCard>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-6 w-6 p-0"
+                        {editingTaskId === task.id ? (
+                          <InlineTaskEditor
+                            value={newTaskTitle}
+                            onChange={setNewTaskTitle}
+                            onSave={() => handleTaskTitleUpdate(task.id, newTaskTitle)}
+                            onCancel={() => {
+                              setEditingTaskId(null);
+                              setNewTaskTitle(task.title);
+                            }}
+                            className="flex-1"
+                          />
+                        ) : (
+                          <>
+                            <span
+                              className={cn(
+                                "text-sm flex-1",
+                                theme === "dark" ? "text-gray-200" : "text-gray-700",
+                                task.timeStage === "done" && "line-through opacity-50"
+                              )}
+                            >
+                              {task.title}
+                            </span>
+                            <div className="flex items-center gap-2">
+                              <TaskHoverCard task={task}>
+                                <InfoIcon
+                                  size={16}
+                                  className="text-gray-400 dark:text-slate-500 cursor-pointer hover:text-gray-600 dark:hover:text-slate-300"
                                   onClick={(e) => e.stopPropagation()}
-                                >
-                                  <MoreHorizontal
-                                    size={16}
-                                    className="text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300"
-                                  />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setEditingTaskId(task.id);
-                                    setNewTaskTitle(task.title);
-                                  }}
-                                >
-                                  <Edit className="w-4 h-4 mr-2" />
-                                  Edit
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  className="text-red-600 dark:text-red-400"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDeleteTask(task.id);
-                                  }}
-                                >
-                                  <Trash2 className="w-4 h-4 mr-2" />
-                                  Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  ))}
+                                />
+                              </TaskHoverCard>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 w-6 p-0"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <MoreHorizontal
+                                      size={16}
+                                      className="text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300"
+                                    />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setEditingTaskId(task.id);
+                                      setNewTaskTitle(task.title);
+                                    }}
+                                  >
+                                    <Edit className="w-4 h-4 mr-2" />
+                                    Edit
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    className="text-red-600 dark:text-red-400"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteTask(task.id);
+                                    }}
+                                  >
+                                    <Trash2 className="w-4 h-4 mr-2" />
+                                    Delete
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>

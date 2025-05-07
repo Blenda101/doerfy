@@ -1,7 +1,7 @@
 import { Task } from '../types/task';
 import { supabase } from './supabaseClient';
 
-export async function createNewTask(title: string = '', timestage: string = 'queue'): Promise<Task> {
+export async function createNewTask(title: string = '', timestage: string = 'queue', listId?: string): Promise<Task> {
   try {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
@@ -22,7 +22,8 @@ export async function createNewTask(title: string = '', timestage: string = 'que
       timestage: timestage,
       stage_entry_date: now,
       assignee: user.id,
-      // list_id: list_id,
+      list_id: listId,
+      aging_status: 'normal',
       priority: 'medium',
       energy: 'medium',
       location: null,
