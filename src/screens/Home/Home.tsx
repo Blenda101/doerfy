@@ -692,7 +692,8 @@ function getIcon(stage: TimeStage) {
   }
 }
 
-function getColor(status: AgingStatus) {
+function getColor(status: AgingStatus | undefined) {
+  if (!status) return "bg-gray-500 text-white";
   switch (status) {
     case "normal":
       return "bg-gray-500 text-white";

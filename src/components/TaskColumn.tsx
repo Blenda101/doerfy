@@ -5,6 +5,8 @@ import { Badge } from "./ui/badge";
 import { Input } from "./ui/input";
 import { PropertySheet } from "./PropertySheet";
 import { InlineTaskEditor } from "./InlineTaskEditor";
+import { TimeBoxConfig } from './TimeBoxDialog';
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,23 +39,24 @@ interface TaskColumnProps {
   tasks: Task[];
   badgeCount?: number;
   defaultExpanded?: boolean;
-  timeStage: Task["timestage"];
+  timeStage: Task["timeStage"];
   isActive?: boolean;
   editingTaskId?: string | null;
   isDraggingOver?: boolean;
   isValidDropTarget?: boolean;
   onTaskSelect?: (task: Task) => void;
-  onNewTask?: (timeStage: Task["timestage"], title: string) => void;
+  onNewTask?: (timeStage: Task["timeStage"], title: string) => void;
   onTaskDelete?: (taskId: string) => void;
   onTaskTitleUpdate?: (taskId: string, title: string) => void;
-  onTimeBoxEdit?: (timeStage: Task["timestage"], config: TimeBoxConfig) => void;
+  onTimeBoxEdit?: (timeStage: Task["timeStage"], config: TimeBoxConfig) => void;
   onTimeBoxMove?: (
-    timeStage: Task["timestage"],
+    timeStage: Task["timeStage"],
     direction: "up" | "down",
   ) => void;
   canMoveUp?: boolean;
   canMoveDown?: boolean;
   expireThreshold?: number;
+  selectedTaskId?: string | null;
 }
 
 export const TaskColumn: React.FC<TaskColumnProps> = ({
@@ -309,8 +312,8 @@ export const TaskColumn: React.FC<TaskColumnProps> = ({
                       className={cn(
                         "flex items-start mb-3 last:mb-0 relative p-1 rounded group",
                         "hover:bg-gray-50 dark:hover:bg-slate-700",
-                        task.aging_status === "warning" && "bg-yellow-50 dark:bg-yellow-900/20",
-                        task.aging_status === "overdue" && "bg-red-50 dark:bg-red-900/20",
+                        task.agingStatus === "warning" && "bg-yellow-50 dark:bg-yellow-900/20",
+                        task.agingStatus === "overdue" && "bg-red-50 dark:bg-red-900/20",
                       )}
                       onClick={() => onTaskSelect?.(task)}
                     >
@@ -330,9 +333,9 @@ export const TaskColumn: React.FC<TaskColumnProps> = ({
                               <span
                                 className={cn(
                                   "text-sm",
-                                  task.aging_status === "overdue" &&
+                                  task.agingStatus === "overdue" &&
                                     "text-red-500 dark:text-red-400",
-                                  task.aging_status === "warning" &&
+                                  task.agingStatus === "warning" &&
                                     "text-yellow-600 dark:text-yellow-400",
                                   "dark:text-slate-200",
                                 )}

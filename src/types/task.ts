@@ -45,11 +45,11 @@ export interface Task {
   id: string;
   title: string;
   description: string;
-  timestage: TimeStage;
-  stage_entry_date: string;
+  timeStage: TimeStage;
+  stageEntryDate: string;
   
   // Core Properties
-  assignee: string;
+  assignee?: string;
   list: string;
   priority: Priority;
   energy: Energy;
@@ -60,24 +60,29 @@ export interface Task {
   
   // Scheduling
   schedule?: TaskSchedule;
-  
+
+  isReoccurring?: boolean;
+  reoccurringPattern?: string | null;
+  dueDate?: string | null;
+  alarm?: boolean;
+
   // Metadata
   labels: string[];
-  show_in_time_box: boolean;
-  show_in_list: boolean;
-  show_in_calendar: boolean;
+  showInTimeBox: boolean;
+  showInList: boolean;
+  showInCalendar: boolean;
   icon: string;
   highlighted?: boolean;
   status?: string;
-  aging_status?: AgingStatus;
+  agingStatus?: AgingStatus;
   
   // History tracking
   history: TaskHistoryItem[];
   
   // System fields
-  created_at: string;
-  updated_at: string;
-  created_by: string;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: string;
   
   // Optional fields
   checklistItems: ChecklistItem[];
