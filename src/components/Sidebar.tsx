@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from './ui/button';
 import { Home, CheckCircle as CircleCheckBig, Calendar, LayoutGrid, HelpCircle, Settings, ChevronRight, ChevronLeft, Bell, Sun, Moon, List as ListIcon, User, BookOpen, StickyNote } from 'lucide-react';
@@ -63,11 +63,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <div className={cn(
-      "border-r flex flex-col items-center py-4 transition-all duration-300",
+      "h-screen flex flex-col transition-all duration-300",
       theme === 'dark' ? 'bg-[#1E293B] border-[#334155]' : 'bg-white border-gray-200',
-      isSidebarExpanded ? "w-60" : "w-16"
+      isSidebarExpanded ? "w-60" : "w-16",
+      "border-r"
     )}>
-      <div className="flex items-center justify-center mb-8">
+      <div className="flex items-center justify-center py-4 mb-4">
         <img 
           src="/doerfy-logo.svg" 
           alt="Doerfy" 
@@ -75,35 +76,42 @@ export const Sidebar: React.FC<SidebarProps> = ({
         />
       </div>
 
-      <div className="flex-1 w-full">
-        {sidebarItems.map((item, index) => (
-          <button
-            key={index}
-            onClick={() => navigate(item.path)}
-            className={cn(
-              "w-full flex items-center px-4 py-3 transition-colors duration-200",
-              location.pathname === item.path
-                ? "bg-[#5036b0] text-white dark:bg-[#8B5CF6]"
-                : theme === 'dark'
-                  ? "text-gray-300 hover:bg-[#334155]"
-                  : "text-gray-600 hover:bg-gray-100",
-              !isSidebarExpanded && "justify-center"
-            )}
-          >
-            {item.icon}
-            {isSidebarExpanded && (
-              <span className="ml-3 text-sm font-medium">{item.label}</span>
-            )}
-          </button>
-        ))}
+      <div className="flex-1 overflow-y-auto">
+        <nav className="space-y-1 px-2">
+          {sidebarItems.map((item, index) => (
+            <button
+              key={index}
+              onClick={() => navigate(item.path)}
+              className={cn(
+                "w-full flex items-center px-3 py-2 rounded-lg transition-colors duration-200",
+                location.pathname === item.path
+                  ? "bg-[#5036b0] text-white dark:bg-[#8B5CF6]"
+                  : theme === 'dark'
+                    ? "text-gray-300 hover:bg-[#334155]"
+                    : "text-gray-600 hover:bg-gray-100",
+                !isSidebarExpanded && "justify-center"
+              )}
+            >
+              {item.icon}
+              {isSidebarExpanded && (
+                <span className="ml-3 text-sm font-medium">{item.label}</span>
+              )}
+            </button>
+          ))}
+        </nav>
+      </div>
 
+      <div className="p-2 space-y-2">
         <button
+          onClick={() => navigate('/notifications')}
           className={cn(
-            "w-full flex items-center px-4 py-3 transition-colors duration-200",
-            theme === 'dark'
-              ? "text-gray-300 hover:bg-[#334155]"
-              : "text-gray-600 hover:bg-gray-100",
-            !isSidebarExpanded && "justify-center"
+            "w-full flex items-center rounded-lg transition-colors duration-200",
+            location.pathname === '/notifications'
+              ? "bg-[#5036b0] text-white dark:bg-[#8B5CF6]"
+              : theme === 'dark'
+                ? "text-gray-300 hover:bg-[#334155]"
+                : "text-gray-600 hover:bg-gray-100",
+            !isSidebarExpanded ? "justify-center p-3" : "px-3 py-2"
           )}
         >
           <div className="relative">
@@ -116,20 +124,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <span className="ml-3 text-sm font-medium">Notifications</span>
           )}
         </button>
-      </div>
 
-      <div className="mt-auto w-full px-4 space-y-4">
         <button
           onClick={() => navigate('/profile')}
           className={cn(
-            "w-full flex items-center transition-colors duration-200",
+            "w-full flex items-center rounded-lg transition-colors duration-200",
             location.pathname === '/profile'
               ? "bg-[#5036b0] text-white dark:bg-[#8B5CF6]"
               : theme === 'dark'
                 ? "text-gray-300 hover:bg-[#334155]"
                 : "text-gray-600 hover:bg-gray-100",
-            !isSidebarExpanded ? "justify-center h-10 w-10" : "px-4 py-2 rounded-lg",
-            "rounded-lg"
+            !isSidebarExpanded ? "justify-center p-3" : "px-3 py-2"
           )}
         >
           {avatarUrl ? (
@@ -138,13 +143,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
               alt="Profile"
               className={cn(
                 "rounded-full object-cover",
-                !isSidebarExpanded ? "w-5 h-5" : "w-6 h-6"
+                !isSidebarExpanded ? "w-5 h-5" : "w-5 h-5"
               )}
             />
           ) : (
-            <User className={cn(
-              !isSidebarExpanded ? "w-5 h-5" : "w-6 h-6"
-            )} />
+            <User className="w-5 h-5" />
           )}
           {isSidebarExpanded && (
             <span className="ml-3 text-sm font-medium">Profile</span>
@@ -152,7 +155,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </button>
 
         <div className={cn(
-          "flex items-center",
+          "flex items-center px-2 py-2",
           isSidebarExpanded ? "justify-between" : "justify-center"
         )}>
           <button

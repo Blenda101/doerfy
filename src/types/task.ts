@@ -1,5 +1,3 @@
-import { TimeBox } from './timeBox';
-
 export type TimeStage = 'queue' | 'do' | 'doing' | 'today' | 'done';
 export type Priority = 'high' | 'medium' | 'low';
 export type Energy = 'high' | 'medium' | 'low';
@@ -24,6 +22,9 @@ export interface TaskSchedule {
   time: string;
   leadDays?: number;
   leadHours?: number;
+  durationDays?: number;
+  durationHours?: number;
+  alarmEnabled?: boolean;
   recurring?: {
     type: 'daily' | 'weekly' | 'monthly' | 'yearly';
     interval: number;
@@ -44,8 +45,8 @@ export interface Task {
   id: string;
   title: string;
   description: string;
-  timeStage: TimeStage;
-  stageEntryDate: string;
+  timestage: TimeStage;
+  stage_entry_date: string;
   
   // Core Properties
   assignee: string;
@@ -62,21 +63,21 @@ export interface Task {
   
   // Metadata
   labels: string[];
-  showInTimeBox: boolean;
-  showInList: boolean;
-  showInCalendar: boolean;
+  show_in_time_box: boolean;
+  show_in_list: boolean;
+  show_in_calendar: boolean;
   icon: string;
   highlighted?: boolean;
   status?: string;
-  agingStatus?: AgingStatus;
+  aging_status?: AgingStatus;
   
   // History tracking
   history: TaskHistoryItem[];
   
   // System fields
-  createdAt: string;
-  updatedAt: string;
-  createdBy: string;
+  created_at: string;
+  updated_at: string;
+  created_by: string;
   
   // Optional fields
   checklistItems: ChecklistItem[];
@@ -106,7 +107,6 @@ export const SCHEDULING_THRESHOLDS = {
   today: { min: 0, max: 1 }
 } as const;
 
-// Helper function to generate valid UUIDs for tasks
 export function generateTaskId(): string {
   return crypto.randomUUID();
 }

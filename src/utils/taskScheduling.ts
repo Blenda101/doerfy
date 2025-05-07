@@ -28,6 +28,9 @@ export function determineTimeStage(daysRemaining: number | null): TimeStage {
 }
 
 export function updateTaskScheduling(task: Task): Task {
+  // Ensure we have a valid stageEntryDate, defaulting to now if not present
+  const currentStageEntryDate = task.stageEntryDate || new Date().toISOString();
+  
   // Calculate the effective due date considering lead time
   const effectiveDueDate = calculateEffectiveDueDate(task);
   
@@ -37,35 +40,30 @@ export function updateTaskScheduling(task: Task): Task {
   // Determine the appropriate time stage based on days remaining
   const targetTimeStage = determineTimeStage(daysRemaining);
 
-  // Only update the task if the time stage needs to change
-  if (targetTimeStage !== task.timeStage) {
-    const now = new Date().toISOString();
+  // Always set a new stageEntryDate when updating the task
+  const now = new Date().toISOString();
     
-    // Calculate days in current stage
-    const daysInCurrentStage = task.stageEntryDate ? 
-      calculateDaysRemaining(new Date(task.stageEntryDate)) || 0 : 
-      0;
+  // Calculate days in current stage
+  const daysInCurrentStage = calculateDaysRemaining(new Date(currentStageEntryDate)) || 0;
 
-    return {
-      ...task,
-      timeStage: targetTimeStage,
-      stageEntryDate: now,
-      history: [
-        ...(task.history || []),
-        {
-          timeStage: task.timeStage,
-          entryDate: task.stageEntryDate,
-          daysInStage: daysInCurrentStage,
-          userId: task.assignee
-        },
-        {
-          timeStage: targetTimeStage,
-          entryDate: now,
-          userId: task.assignee
-        }
-      ]
-    };
-  }
-
-  return task;
+  // Return the updated task with guaranteed non-null stageEntryDate
+  return {
+    ...task,
+    timeStage: targetTimeStage,
+    stageEntryDate: now, // This will never be null
+    history: [
+      ...(task.history || []),
+      {
+        timeStage: task.timeStage,
+        entryDate: currentStageEntryDate,
+        daysInStage: daysInCurrentStage,
+        userId: task.assignee
+      },
+      {
+        timeStage: targetTimeStage,
+        entryDate: now,
+        userId: task.assignee
+      }
+    ]
+  };
 }

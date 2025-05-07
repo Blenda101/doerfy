@@ -12,6 +12,7 @@ import { LabelEditor } from './LabelEditor';
 import { TaskScheduler } from './TaskScheduler';
 import { Label } from './ui/label';
 import { Checkbox } from './ui/checkbox';
+import { Input } from './ui/input';
 import { cn } from '../lib/utils';
 import { Theme } from '../utils/theme';
 import { supabase } from '../utils/supabaseClient';
@@ -42,14 +43,11 @@ export const PropertySheet: React.FC<PropertySheetProps> = ({
   theme = 'light',
   availableLists = []
 }) => {
-  const [isEditingTitle, setIsEditingTitle] = useState(() => !task?.title.trim());
-
-  const [titleValue, setTitleValue] = useState(task?.title);
-  const [isHoveringTitle, setIsHoveringTitle] = useState(false);
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [titleValue, setTitleValue] = useState(task.title);
   const [isSchedulerOpen, setIsSchedulerOpen] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
-  const titleContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const loadAvatar = async () => {
@@ -85,33 +83,21 @@ export const PropertySheet: React.FC<PropertySheetProps> = ({
     }
   }, [isEditingTitle]);
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (titleContainerRef.current && !titleContainerRef.current.contains(event.target as Node)) {
-        handleTitleSave();
-      }
-    };
-
-    if (isEditingTitle) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isEditingTitle, titleValue]);
-
   const handleTaskUpdate = (updates: Partial<Task>) => {
-    onTaskUpdate({ ...task, ...updates, updatedAt: new Date().toISOString() });
-  };
-
-  const handleTimeStageChange = (stage: string) => {
-    handleTaskUpdate({ timeStage: stage.toLowerCase() as Task['timeStage'] });
+    if (!task) return;
+    onTaskUpdate({ 
+      ...task, 
+      ...updates,
+      updated_at: new Date().toISOString()
+    });
   };
 
   const handleTitleSave = () => {
+    if (!task) return;
+    
     const trimmedTitle = titleValue.trim();
     if (!trimmedTitle) {
-      setTitleValue(task.title || 'New Task');
+      setTitleValue(task.title);
       setIsEditingTitle(false);
       return;
     }
@@ -122,13 +108,7 @@ export const PropertySheet: React.FC<PropertySheetProps> = ({
     setIsEditingTitle(false);
   };
 
-  const handleTitleClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsEditingTitle(true);
-  };
-
   const handleTitleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    e.stopPropagation();
     if (e.key === 'Enter') {
       handleTitleSave();
     } else if (e.key === 'Escape') {
@@ -141,16 +121,12 @@ export const PropertySheet: React.FC<PropertySheetProps> = ({
     handleTaskUpdate({ labels: newLabels });
   };
 
-  const handleScheduleClick = () => {
-    setIsSchedulerOpen(true);
-  };
-
   const handleScheduleChange = (schedule: Task['schedule']) => {
     handleTaskUpdate({ schedule });
   };
 
   const formatScheduleDetails = () => {
-    if (!task.schedule?.enabled || !task.schedule.date) return '';
+    if (!task?.schedule?.enabled || !task?.schedule?.date) return '';
     
     const date = new Date(task.schedule.date);
     const formattedDate = format(date, 'MMM d');
@@ -163,7 +139,7 @@ export const PropertySheet: React.FC<PropertySheetProps> = ({
 
   return (
     <div className={cn(
-      "w-[635px] h-screen flex flex-col",
+      "w-full h-screen flex flex-col",
       theme === 'dark' ? 'bg-[#1E293B]' : 'bg-white'
     )}>
       <div className={cn(
@@ -196,32 +172,32 @@ export const PropertySheet: React.FC<PropertySheetProps> = ({
           <div className="flex justify-between items-center mb-6">
             <div className="flex items-center gap-4">
               <Button
-                variant={task.schedule?.enabled ? 'default' : 'ghost'}
+                variant={task?.schedule?.enabled ? 'default' : 'ghost'}
                 className={cn(
                   "h-9 border-none rounded flex items-center text-base gap-2",
-                  task.schedule?.enabled 
+                  task?.schedule?.enabled 
                     ? "bg-[#5036b0] text-white hover:bg-[#3a2783] dark:bg-[#8B5CF6] dark:hover:bg-[#7C3AED]"
                     : "bg-[#efefef] hover:bg-[#e5e5e5] dark:bg-slate-700 dark:hover:bg-slate-600"
                 )}
-                onClick={handleScheduleClick}
+                onClick={() => setIsSchedulerOpen(true)}
               >
-                {task.schedule?.recurring ? (
+                {task?.schedule?.recurring ? (
                   <RepeatIcon className={cn(
                     "w-5 h-5",
-                    task.schedule?.enabled 
+                    task?.schedule?.enabled 
                       ? "text-white" 
                       : theme === 'dark' ? "text-slate-300" : "text-[#6f6f6f]"
                   )} />
                 ) : (
                   <CalendarIcon className={cn(
                     "w-5 h-5",
-                    task.schedule?.enabled 
+                    task?.schedule?.enabled 
                       ? "text-white" 
                       : theme === 'dark' ? "text-slate-300" : "text-[#6f6f6f]"
                   )} />
                 )}
                 <span className="font-normal">
-                  {task.schedule?.enabled ? formatScheduleDetails() : 'Schedule'}
+                  {task?.schedule?.enabled ? formatScheduleDetails() : 'Schedule'}
                 </span>
               </Button>
 
@@ -242,9 +218,9 @@ export const PropertySheet: React.FC<PropertySheetProps> = ({
 
               <EditableProperty
                 label=""
-                value={task.timeStage.charAt(0).toUpperCase() + task.timeStage.slice(1)}
+                value={task.timestage.charAt(0).toUpperCase() + task.timestage.slice(1)}
                 options={['Queue', 'Do', 'Doing', 'Today', 'Done']}
-                onChange={handleTimeStageChange}
+                onChange={(value) => handleTaskUpdate({ timestage: value.toLowerCase() as Task['timestage'] })}
                 className={cn(
                   "h-9 rounded text-base",
                   theme === 'dark' ? "bg-slate-700" : "bg-[#efefef]"
@@ -266,35 +242,26 @@ export const PropertySheet: React.FC<PropertySheetProps> = ({
             </div>
           </div>
 
-          <div
-            ref={titleContainerRef}
-            className={cn(
-              "mb-4 p-2 rounded",
-              isHoveringTitle && (theme === 'dark' ? "bg-slate-700" : "bg-[#f5f5f5]")
-            )}
-            onMouseEnter={() => setIsHoveringTitle(true)}
-            onMouseLeave={() => setIsHoveringTitle(false)}
-          >
+          <div className="mb-4">
             {isEditingTitle ? (
-              <input
+              <Input
                 ref={titleInputRef}
-                type="text"
                 value={titleValue}
                 onChange={(e) => setTitleValue(e.target.value)}
                 onKeyDown={handleTitleKeyDown}
+                onBlur={handleTitleSave}
                 className={cn(
-                  "text-[21px] font-medium w-full bg-transparent border-none focus:outline-none",
-                  theme === 'dark' ? "text-slate-200" : "text-[#514f4f]"
+                  "text-[21px] font-medium",
+                  theme === 'dark' ? "bg-slate-700 border-slate-600 text-white" : "bg-white"
                 )}
-                onClick={(e) => e.stopPropagation()}
               />
             ) : (
               <h1
                 className={cn(
                   "text-[21px] font-medium cursor-text",
-                  theme === 'dark' ? "text-slate-200" : "text-[#514f4f]"
+                  theme === 'dark' ? "text-white" : "text-gray-900"
                 )}
-                onClick={handleTitleClick}
+                onClick={() => setIsEditingTitle(true)}
               >
                 {task.title}
               </h1>
@@ -304,14 +271,13 @@ export const PropertySheet: React.FC<PropertySheetProps> = ({
           <div className="mb-4">
             <h3 className={cn(
               "font-bold text-base mb-2",
-              theme === 'dark' ? "text-slate-200" : "text-[#514f4f]"
+              theme === 'dark' ? "text-white" : "text-gray-900"
             )}>Description</h3>
-            <div className="flex">
-              <RichTextEditor
-                content={task.description}
-                onChange={(content) => handleTaskUpdate({ description: content })}
-              />
-            </div>
+            <RichTextEditor
+              content={task.description}
+              onChange={(content) => handleTaskUpdate({ description: content })}
+              theme={theme}
+            />
           </div>
 
           <div className="mb-4">
@@ -405,7 +371,7 @@ export const PropertySheet: React.FC<PropertySheetProps> = ({
 
                 <EditableProperty
                   label="List"
-                  value={task.list}
+                  value={task.list || ''}
                   options={availableLists}
                   onChange={(value) => handleTaskUpdate({ list: value })}
                   disabled={availableLists.length === 0}
@@ -413,7 +379,7 @@ export const PropertySheet: React.FC<PropertySheetProps> = ({
 
                 <EditableProperty
                   label="Priority"
-                  value={task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
+                  value={task.priority?.charAt(0).toUpperCase() + task.priority?.slice(1) || 'Medium'}
                   icon={<div className="text-red-500 text-lg">●</div>}
                   options={['High', 'Medium', 'Low']}
                   onChange={(value) => 
@@ -425,7 +391,7 @@ export const PropertySheet: React.FC<PropertySheetProps> = ({
 
                 <EditableProperty
                   label="Energy"
-                  value={task.energy.charAt(0).toUpperCase() + task.energy.slice(1)}
+                  value={task.energy?.charAt(0).toUpperCase() + task.energy?.slice(1) || 'Medium'}
                   icon={<div className="text-yellow-500 text-lg">●</div>}
                   options={['High', 'Medium', 'Low']}
                   onChange={(value) => 
@@ -454,9 +420,9 @@ export const PropertySheet: React.FC<PropertySheetProps> = ({
                 "mt-16 text-base",
                 theme === 'dark' ? "text-slate-400" : "text-[#6f6f6f]"
               )}>
-                Created {new Date(task.createdAt).toLocaleString()}
+                Created {new Date(task.created_at).toLocaleString()}
                 <br />
-                Updated {new Date(task.updatedAt).toLocaleString()}
+                Updated {new Date(task.updated_at).toLocaleString()}
               </div>
             </TabsContent>
 
@@ -468,8 +434,8 @@ export const PropertySheet: React.FC<PropertySheetProps> = ({
                     theme === 'dark' ? "text-slate-200" : "text-gray-700"
                   )}>
                     <Checkbox
-                      checked={task.showInTimeBox}
-                      onCheckedChange={(checked) => handleTaskUpdate({ showInTimeBox: checked === true })}
+                      checked={task.show_in_time_box}
+                      onCheckedChange={(checked) => handleTaskUpdate({ show_in_time_box: checked === true })}
                       className="dark:border-slate-600"
                     />
                     <span>Show in Time Box</span>
@@ -481,8 +447,8 @@ export const PropertySheet: React.FC<PropertySheetProps> = ({
                     theme === 'dark' ? "text-slate-200" : "text-gray-700"
                   )}>
                     <Checkbox
-                      checked={task.showInList}
-                      onCheckedChange={(checked) => handleTaskUpdate({ showInList: checked === true })}
+                      checked={task.show_in_list}
+                      onCheckedChange={(checked) => handleTaskUpdate({ show_in_list: checked === true })}
                       className="dark:border-slate-600"
                     />
                     <span>Show in List</span>
@@ -494,8 +460,8 @@ export const PropertySheet: React.FC<PropertySheetProps> = ({
                     theme === 'dark' ? "text-slate-200" : "text-gray-700"
                   )}>
                     <Checkbox
-                      checked={task.showInCalendar}
-                      onCheckedChange={(checked) => handleTaskUpdate({ showInCalendar: checked === true })}
+                      checked={task.show_in_calendar}
+                      onCheckedChange={(checked) => handleTaskUpdate({ show_in_calendar: checked === true })}
                       className="dark:border-slate-600"
                     />
                     <span>Show in Calendar</span>
@@ -514,7 +480,7 @@ export const PropertySheet: React.FC<PropertySheetProps> = ({
       <TaskScheduler
         isOpen={isSchedulerOpen}
         onClose={() => setIsSchedulerOpen(false)}
-        schedule={task.schedule || null}
+        schedule={task?.schedule || null}
         onChange={handleScheduleChange}
       />
     </div>

@@ -1,16 +1,16 @@
-import React, { useState, useEffect } from "react";
-import { Button } from "../../components/ui/button";
-import { Checkbox } from "../../components/ui/checkbox";
-import { Badge } from "../../components/ui/badge";
-import { Input } from "../../components/ui/input";
-import { PropertySheet } from "../../components/PropertySheet";
-import { InlineTaskEditor } from "../../components/InlineTaskEditor";
+import React, { useState, useEffect } from 'react';
+import { Button } from '../../components/ui/button';
+import { Checkbox } from '../../components/ui/checkbox';
+import { Badge } from '../../components/ui/badge';
+import { Input } from '../../components/ui/input';
+import { PropertySheet } from '../../components/PropertySheet';
+import { InlineTaskEditor } from '../../components/InlineTaskEditor';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "../../components/ui/dropdown-menu";
+} from '../../components/ui/dropdown-menu';
 import {
   Search,
   Bell,
@@ -20,13 +20,14 @@ import {
   InfoIcon,
   Edit,
   Trash2,
-} from "lucide-react";
-import { Task } from "../../types/task";
-import { loadTasks, saveTasks, deleteTask } from "../../utils/storage";
-import { cn } from "../../lib/utils";
-import { Theme } from "../../utils/theme";
-import { TaskHoverCard } from "../../components/TaskHoverCard";
-import { createNewTask } from "../../utils/taskUtils";
+} from 'lucide-react';
+import { Task } from '../../types/task';
+import { supabase } from '../../utils/supabaseClient';
+import { cn } from '../../lib/utils';
+import { Theme } from '../../utils/theme';
+import { TaskHoverCard } from '../../components/TaskHoverCard';
+import { createNewTask } from '../../utils/taskUtils';
+import { toast } from 'react-hot-toast';
 
 interface TaskListProps {
   theme?: Theme;
@@ -35,7 +36,7 @@ interface TaskListProps {
 }
 
 export const TaskList: React.FC<TaskListProps> = ({
-  theme = "light",
+  theme = 'light',
   isAddListOpen,
   setIsAddListOpen,
 }) => {
@@ -45,7 +46,7 @@ export const TaskList: React.FC<TaskListProps> = ({
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [newTaskList, setNewTaskList] = useState<string | null>(null);
-  const [newTaskTitle, setNewTaskTitle] = useState("");
+  const [newTaskTitle, setNewTaskTitle] = useState('');
   const [activeList, setActiveList] = useState<string | null>(null);
   const [hoveredTaskId, setHoveredTaskId] = useState<string | null>(null);
 
@@ -54,12 +55,23 @@ export const TaskList: React.FC<TaskListProps> = ({
       try {
         setIsLoading(true);
         setError(null);
-        const loadedTasks = await loadTasks();
-        console.log("Loaded tasks:", loadedTasks);
-        setTasks(loadedTasks.filter((task) => task.showInList));
+
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('No authenticated user found');
+
+        const { data, error } = await supabase
+          .from('tasks')
+          .select('*')
+          .eq('assignee', user.id)
+          .eq('show_in_list', true)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        setTasks(data || []);
       } catch (err) {
-        console.error("Error loading tasks:", err);
-        setError("Failed to load tasks. Please try again.");
+        console.error('Error loading tasks:', err);
+        setError('Failed to load tasks. Please try again.');
         setTasks([]);
       } finally {
         setIsLoading(false);
@@ -81,13 +93,19 @@ export const TaskList: React.FC<TaskListProps> = ({
 
   const handleTaskComplete = async (taskId: string) => {
     try {
-      const updatedTasks = tasks.map((task) =>
-        task.id === taskId ? { ...task, timeStage: "done" } : task,
-      );
-      await saveTasks(updatedTasks);
-      setTasks(updatedTasks.filter((task) => task.showInList));
+      const { error } = await supabase
+        .from('tasks')
+        .update({ timestage: 'done' })
+        .eq('id', taskId);
+
+      if (error) throw error;
+
+      setTasks(tasks.map(task => 
+        task.id === taskId ? { ...task, timestage: 'done' } : task
+      ));
     } catch (error) {
-      console.error("Error completing task:", error);
+      console.error('Error completing task:', error);
+      toast.error('Failed to complete task');
     }
   };
 
@@ -95,92 +113,97 @@ export const TaskList: React.FC<TaskListProps> = ({
     if (editingTaskId !== task.id) {
       setSelectedTask(task);
       setEditingTaskId(null);
+      setActiveList(task.list);
     }
   };
 
   const handleTaskUpdate = async (updatedTask: Task) => {
     try {
-      const newTasks = tasks.map((task) =>
-        task.id === updatedTask.id ? updatedTask : task,
-      );
-      await saveTasks(newTasks);
-      setTasks(newTasks.filter((task) => task.showInList));
+      const { error } = await supabase
+        .from('tasks')
+        .update({
+          title: updatedTask.title,
+          description: updatedTask.description,
+          timestage: updatedTask.timestage,
+          stage_entry_date: updatedTask.stage_entry_date,
+          list: updatedTask.list,
+          priority: updatedTask.priority,
+          energy: updatedTask.energy,
+          location: updatedTask.location,
+          story: updatedTask.story,
+          labels: updatedTask.labels,
+          show_in_time_box: updatedTask.show_in_time_box,
+          show_in_list: updatedTask.show_in_list,
+          show_in_calendar: updatedTask.show_in_calendar,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', updatedTask.id);
+
+      if (error) throw error;
+
+      setTasks(tasks.map(task =>
+        task.id === updatedTask.id ? updatedTask : task
+      ));
       setSelectedTask(updatedTask);
     } catch (error) {
-      console.error("Error updating task:", error);
+      console.error('Error updating task:', error);
+      toast.error('Failed to update task');
     }
   };
 
   const handleTaskTitleUpdate = async (taskId: string, title: string) => {
-    console.log("Updating task title:", { taskId, title });
     try {
-      const updatedTasks = tasks.map((task) =>
-        task.id === taskId
-          ? { ...task, title, updatedAt: new Date().toISOString() }
-          : task,
-      );
-      await saveTasks(updatedTasks);
-      setTasks(updatedTasks);
+      const { error } = await supabase
+        .from('tasks')
+        .update({ 
+          title: title.trim(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', taskId);
+
+      if (error) throw error;
+
+      setTasks(tasks.map(task =>
+        task.id === taskId ? { ...task, title: title.trim() } : task
+      ));
       setEditingTaskId(null);
     } catch (error) {
-      console.error("Error updating task title:", error);
+      console.error('Error updating task title:', error);
+      toast.error('Failed to update task title');
     }
   };
 
   const handleNewTask = async (list: string) => {
-    console.log("Creating new task for list:", list);
     try {
       const newTask = await createNewTask(list);
-      console.log("New task created:", newTask);
-      const updatedTasks = [newTask, ...tasks];
-      await saveTasks(updatedTasks);
-      setTasks(updatedTasks);
+      setTasks([newTask, ...tasks]);
       setNewTaskList(list);
       setEditingTaskId(newTask.id);
-      setNewTaskTitle("");
+      setNewTaskTitle('');
       setActiveList(list);
     } catch (error) {
-      console.error("Error creating new task:", error);
-    }
-  };
-
-  const handleNewTaskSave = async (taskId: string, title: string) => {
-    console.log("Saving new task:", { taskId, title });
-    try {
-      const trimmedTitle = title.trim();
-      if (trimmedTitle) {
-        await handleTaskTitleUpdate(taskId, trimmedTitle);
-      } else {
-        const updatedTasks = tasks.filter((task) => task.id !== taskId);
-        await deleteTask(taskId);
-        setTasks(updatedTasks);
-      }
-      setEditingTaskId(null);
-      setNewTaskList(null);
-      setNewTaskTitle("");
-    } catch (error) {
-      console.error("Error saving new task:", error);
+      console.error('Error creating new task:', error);
+      toast.error('Failed to create task');
     }
   };
 
   const handleDeleteTask = async (taskId: string) => {
     try {
-      const updatedTasks = tasks.filter((task) => task.id !== taskId);
-      await deleteTask(taskId);
-      setTasks(updatedTasks);
+      const { error } = await supabase
+        .from('tasks')
+        .delete()
+        .eq('id', taskId);
+
+      if (error) throw error;
+
+      setTasks(tasks.filter(task => task.id !== taskId));
       if (selectedTask?.id === taskId) {
         setSelectedTask(null);
       }
+      toast.success('Task deleted successfully');
     } catch (error) {
-      console.error("Error deleting task:", error);
-    }
-  };
-
-  const handleEditTask = (taskId: string) => {
-    const task = tasks.find((t) => t.id === taskId);
-    if (task) {
-      setEditingTaskId(taskId);
-      setNewTaskTitle(task.title);
+      console.error('Error deleting task:', error);
+      toast.error('Failed to delete task');
     }
   };
 
@@ -204,12 +227,14 @@ export const TaskList: React.FC<TaskListProps> = ({
     <div className="flex flex-1 h-full">
       <div className="flex-1 flex flex-col">
         <div className="flex-1 px-6 py-4 overflow-auto">
-          <div className="grid grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {Object.entries(tasksByList).map(([list, tasks]) => (
               <div
                 key={list}
-                className="space-y-4"
-                onClick={() => setActiveList(list)}
+                className={cn(
+                  "space-y-4",
+                  activeList === list && "col-span-2"
+                )}
               >
                 <div className="flex items-center border-b pb-4 dark:border-slate-700">
                   <div
@@ -240,7 +265,7 @@ export const TaskList: React.FC<TaskListProps> = ({
                   </div>
                   <Button
                     variant="ghost"
-                    size="icon"
+                    size="sm"
                     className="ml-2 h-8 w-8"
                     onClick={() => handleNewTask(list)}
                   >
@@ -248,38 +273,14 @@ export const TaskList: React.FC<TaskListProps> = ({
                   </Button>
                 </div>
                 <div className="space-y-2">
-                  {/* {newTaskList === list && editingTaskId && (
-                    <div
-                      className={cn(
-                        "flex items-start space-x-2 p-2 rounded-lg",
-                        "bg-gray-50 dark:bg-gray-800"
-                      )}
-                    >
-                      <Checkbox
-                        checked={false}
-                        className="mt-1"
-                        disabled
-                      />
-                      <InlineTaskEditor
-                        value={newTaskTitle}
-                        onChange={setNewTaskTitle}
-                        onSave={() => handleNewTaskSave(editingTaskId, newTaskTitle)}
-                        onCancel={() => {
-                          setEditingTaskId(null);
-                          setNewTaskList(null);
-                          setNewTaskTitle('');
-                        }}
-                        className="flex-1"
-                      />
-                    </div>
-                  )} */}
                   {tasks.map((task) => (
                     <div
                       key={task.id}
                       className={cn(
-                        "flex items-start space-x-2 p-2 rounded-lg group",
+                        "flex items-start space-x-2 p-2 rounded-lg",
                         "hover:bg-gray-50 dark:hover:bg-gray-800",
                         "cursor-pointer",
+                        selectedTask?.id === task.id && "bg-gray-50 dark:bg-gray-800"
                       )}
                       onClick={() => handleTaskSelect(task)}
                       onDoubleClick={() => {
@@ -290,7 +291,7 @@ export const TaskList: React.FC<TaskListProps> = ({
                       onMouseLeave={() => setHoveredTaskId(null)}
                     >
                       <Checkbox
-                        checked={task.timeStage === "done"}
+                        checked={task.timestage === "done"}
                         onCheckedChange={() => handleTaskComplete(task.id)}
                         className="mt-1"
                         onClick={(e) => e.stopPropagation()}
@@ -299,12 +300,10 @@ export const TaskList: React.FC<TaskListProps> = ({
                         <InlineTaskEditor
                           value={newTaskTitle}
                           onChange={setNewTaskTitle}
-                          onSave={() =>
-                            handleNewTaskSave(task.id, newTaskTitle)
-                          }
+                          onSave={() => handleTaskTitleUpdate(task.id, newTaskTitle)}
                           onCancel={() => {
                             setEditingTaskId(null);
-                            setNewTaskTitle("");
+                            setNewTaskTitle(task.title);
                           }}
                           className="flex-1"
                         />
@@ -312,11 +311,11 @@ export const TaskList: React.FC<TaskListProps> = ({
                         <>
                           <span
                             className={cn(
-                              "flex-1",
+                              "text-sm flex-1",
                               theme === "dark"
                                 ? "text-gray-200"
                                 : "text-gray-700",
-                              task.timeStage === "done" &&
+                              task.timestage === "done" &&
                                 "line-through opacity-50",
                             )}
                           >
@@ -333,7 +332,7 @@ export const TaskList: React.FC<TaskListProps> = ({
                             <TaskHoverCard task={task}>
                               <InfoIcon
                                 size={16}
-                                className="text-gray-400 dark:text-gray-500 cursor-pointer hover:text-gray-600 dark:hover:text-gray-300"
+                                className="text-gray-400 dark:text-slate-500 cursor-pointer hover:text-gray-600 dark:hover:text-slate-300"
                                 onClick={(e) => e.stopPropagation()}
                               />
                             </TaskHoverCard>
@@ -347,7 +346,7 @@ export const TaskList: React.FC<TaskListProps> = ({
                                 >
                                   <MoreHorizontal
                                     size={16}
-                                    className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
+                                    className="text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300"
                                   />
                                 </Button>
                               </DropdownMenuTrigger>
@@ -355,7 +354,8 @@ export const TaskList: React.FC<TaskListProps> = ({
                                 <DropdownMenuItem
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    handleEditTask(task.id);
+                                    setEditingTaskId(task.id);
+                                    setNewTaskTitle(task.title);
                                   }}
                                 >
                                   <Edit className="w-4 h-4 mr-2" />

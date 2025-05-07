@@ -36,7 +36,9 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
   }
 
   if (!isAuth) {
-    return <Navigate to="/auth" state={{ from: location }} replace />;
+    // Store the current path before redirecting
+    localStorage.setItem('redirectAfterAuth', location.pathname === '/auth' ? '/' : location.pathname);
+    return <Navigate to="/auth" replace />;
   }
 
   return <>{children}</>;

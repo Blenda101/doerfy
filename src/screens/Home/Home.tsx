@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef } from "react";
-import { Sidebar } from "../../components/Sidebar";
-import { Input } from "../../components/ui/input";
+import React, { useState, useRef, useEffect } from "react";
 import { Button } from "../../components/ui/button";
+import { Input } from "../../components/ui/input";
 import { Badge } from "../../components/ui/badge";
 import { Separator } from "../../components/ui/separator";
+import { Sidebar } from "../../components/Sidebar";
 import {
   BannerManager,
   type BannerConfig,
@@ -18,8 +18,7 @@ import {
 } from "../../utils/storage";
 import { getWeather } from "../../utils/weather";
 import { Line } from "react-chartjs-2";
-
-
+import { supabase } from "../../utils/supabaseClient";
 
 import {
   Chart as ChartJS,
@@ -74,9 +73,22 @@ export const Home: React.FC = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [currentQuoteIndex, setCurrentQuoteIndex] = useState(0);
   const [audioError, setAudioError] = useState<string | null>(null);
+  const [firstName, setFirstName] = useState<string>('');
+  const [greeting, setGreeting] = useState<string>('');
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const imageIntervalRef = useRef<number>();
   const quoteIntervalRef = useRef<number>();
+
+  const getGreeting = (name: string) => {
+    const hour = new Date().getHours();
+    let timeGreeting = "Good Morning";
+    if (hour >= 12 && hour < 18) {
+      timeGreeting = "Good Afternoon";
+    } else if (hour >= 18) {
+      timeGreeting = "Good Evening";
+    }
+    return `${timeGreeting}, ${name || 'Guest'}`;
+  };
 
   useEffect(() => {
     const loadData = async () => {
@@ -89,6 +101,23 @@ export const Home: React.FC = () => {
         console.log("Loaded banner config:", loadedBannerConfig);
         setTasks(loadedTasks);
         setBannerConfig(loadedBannerConfig);
+
+        // Load user profile
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('first_name')
+            .eq('id', user.id)
+            .single();
+          
+          if (profile?.first_name) {
+            setFirstName(profile.first_name);
+            setGreeting(getGreeting(profile.first_name));
+          } else {
+            setGreeting(getGreeting(''));
+          }
+        }
       } catch (error) {
         console.error("Error loading data:", error);
       }
@@ -96,6 +125,15 @@ export const Home: React.FC = () => {
 
     loadData();
   }, []);
+
+  useEffect(() => {
+    // Update greeting every minute
+    const intervalId = setInterval(() => {
+      setGreeting(getGreeting(firstName));
+    }, 60000);
+
+    return () => clearInterval(intervalId);
+  }, [firstName]);
 
   useEffect(() => {
     const fetchWeather = async () => {
@@ -351,19 +389,21 @@ export const Home: React.FC = () => {
               : "border-gray-200 bg-white",
           )}
         >
-          <div className="flex-1 flex items-center space-x-4">
-            <Input
-              placeholder="Quick Add Task"
-              className={cn(
-                "max-w-md",
-                theme === "dark"
-                  ? "bg-slate-800 border-slate-700"
-                  : "bg-gray-50",
-              )}
-            />
-            <Button variant="ghost" size="icon">
-              <Search className="h-5 w-5 text-gray-500" />
-            </Button>
+          <div className="flex-1 flex items-center justify-center space-x-4">
+            <div className="max-w-md w-full flex items-center justify-center space-x-4">
+              <Input
+                placeholder="Quick Add Task"
+                className={cn(
+                  "w-full",
+                  theme === "dark"
+                    ? "bg-slate-800 border-slate-700"
+                    : "bg-gray-50",
+                )}
+              />
+              <Button variant="ghost" size="icon">
+                <Search className="h-5 w-5 text-gray-500" />
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -409,7 +449,7 @@ export const Home: React.FC = () => {
                 </div>
               </div>
               <h1 className="text-4xl font-bold text-white mb-4">
-                Good Morning, Gabriel
+                {greeting}
               </h1>
               <p className="text-xl text-white/90 italic transition-opacity duration-500">
                 {currentQuote}

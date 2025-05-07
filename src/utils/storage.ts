@@ -2,25 +2,26 @@ import { Task } from '../types/task';
 import { TimeBox } from '../types/timeBox';
 import { BannerConfig } from '../components/BannerManager';
 import { supabase } from './supabaseClient';
+import { defaultTimeBoxes } from '../data/timeBoxes';
 
 const STORAGE_KEYS = {
   TIME_BOXES: 'doerfy_timeboxes',
 } as const;
 
-// TimeBox functions remain localStorage-based for now
 export function saveTimeBoxes(timeBoxes: TimeBox[]): void {
   localStorage.setItem(STORAGE_KEYS.TIME_BOXES, JSON.stringify(timeBoxes));
 }
 
-export function loadTimeBoxes(): TimeBox[] | null {
-  const stored = localStorage.getItem(STORAGE_KEYS.TIME_BOXES);
-  if (!stored) return null;
-  
+export function loadTimeBoxes(): TimeBox[] {
   try {
-    return JSON.parse(stored);
+    const stored = localStorage.getItem(STORAGE_KEYS.TIME_BOXES);
+    if (!stored) return defaultTimeBoxes;
+    
+    const parsed = JSON.parse(stored);
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : defaultTimeBoxes;
   } catch (e) {
     console.error('Failed to parse stored time boxes:', e);
-    return null;
+    return defaultTimeBoxes;
   }
 }
 
@@ -31,12 +32,14 @@ export async function saveTasks(tasks: Task[]): Promise<void> {
       throw new Error('No authenticated user found');
     }
 
+    const currentTime = new Date().toISOString();
+
     const tasksToUpsert = tasks.map(task => ({
       id: task.id,
       title: task.title,
       description: task.description,
-      time_stage: task.timeStage,
-      stage_entry_date: task.stageEntryDate,
+      timestage: task.timestage,
+      stage_entry_date: task.stage_entry_date,
       assignee: user.id,
       list: task.list,
       priority: task.priority,
@@ -45,14 +48,14 @@ export async function saveTasks(tasks: Task[]): Promise<void> {
       story: task.story,
       labels: task.labels,
       icon: task.icon,
-      show_in_time_box: task.showInTimeBox,
-      show_in_list: task.showInList,
-      show_in_calendar: task.showInCalendar,
+      show_in_time_box: task.show_in_time_box ?? true,
+      show_in_list: task.show_in_list ?? true,
+      show_in_calendar: task.show_in_calendar ?? false,
       highlighted: task.highlighted,
       status: task.status,
-      aging_status: task.agingStatus,
-      created_at: task.createdAt,
-      updated_at: new Date().toISOString(),
+      aging_status: task.aging_status,
+      created_at: task.created_at || currentTime,
+      updated_at: currentTime,
       created_by: user.id
     }));
 
@@ -79,26 +82,20 @@ export async function loadTasks(): Promise<Task[]> {
       throw new Error('No authenticated user found');
     }
 
-    const { data: tasks, error } = await supabase
+    const { data: tasks, error: taskError } = await supabase
       .from('tasks')
       .select('*')
       .eq('assignee', user.id)
       .order('created_at', { ascending: false });
 
-    if (error) {
-      throw error;
-    }
+    if (taskError) throw taskError;
 
-    if (!tasks) {
-      return [];
-    }
-
-    return tasks.map(task => ({
+    return (tasks || []).map(task => ({
       id: task.id,
       title: task.title,
       description: task.description,
-      timeStage: task.time_stage,
-      stageEntryDate: task.stage_entry_date,
+      timestage: task.timestage,
+      stage_entry_date: task.stage_entry_date,
       assignee: task.assignee,
       list: task.list,
       priority: task.priority,
@@ -107,15 +104,15 @@ export async function loadTasks(): Promise<Task[]> {
       story: task.story,
       labels: task.labels || [],
       icon: task.icon,
-      showInTimeBox: task.show_in_time_box ?? true,
-      showInList: task.show_in_list ?? true,
-      showInCalendar: task.show_in_calendar ?? false,
+      show_in_time_box: task.show_in_time_box ?? true,
+      show_in_list: task.show_in_list ?? true,
+      show_in_calendar: task.show_in_calendar ?? false,
       highlighted: task.highlighted,
       status: task.status,
-      agingStatus: task.aging_status,
-      createdAt: task.created_at,
-      updatedAt: task.updated_at,
-      createdBy: task.created_by,
+      aging_status: task.aging_status,
+      created_at: task.created_at,
+      updated_at: task.updated_at,
+      created_by: task.created_by,
       checklistItems: [],
       comments: [],
       attachments: [],
@@ -145,7 +142,6 @@ export async function deleteTask(taskId: string): Promise<void> {
 
 export async function saveBannerConfig(config: BannerConfig): Promise<void> {
   try {
-    console.log('Saving banner config:', config);
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
       throw new Error('No authenticated user found');
@@ -170,11 +166,8 @@ export async function saveBannerConfig(config: BannerConfig): Promise<void> {
       });
 
     if (error) {
-      console.error('Error saving banner config:', error);
       throw error;
     }
-
-    console.log('Banner config saved successfully');
   } catch (error) {
     console.error('Error saving banner config:', error);
     throw error;
@@ -183,7 +176,6 @@ export async function saveBannerConfig(config: BannerConfig): Promise<void> {
 
 export async function loadBannerConfig(): Promise<BannerConfig | null> {
   try {
-    console.log('Loading banner config...');
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
       throw new Error('No authenticated user found');
@@ -196,16 +188,14 @@ export async function loadBannerConfig(): Promise<BannerConfig | null> {
       .single();
 
     if (error) {
-      console.error('Error loading banner config:', error);
       throw error;
     }
 
     if (!config) {
-      console.log('No banner config found');
       return null;
     }
 
-    const bannerConfig = {
+    return {
       images: config.images || [],
       transitionTime: config.transition_time || 5,
       audio: config.audio || [],
@@ -220,9 +210,6 @@ export async function loadBannerConfig(): Promise<BannerConfig | null> {
         color: '#FFFFFF'
       }
     };
-
-    console.log('Loaded banner config:', bannerConfig);
-    return bannerConfig;
   } catch (error) {
     console.error('Error loading banner config:', error);
     throw error;

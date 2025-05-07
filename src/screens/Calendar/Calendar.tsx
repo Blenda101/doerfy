@@ -63,7 +63,8 @@ export const Calendar: React.FC<CalendarProps> = ({ theme = "light" }) => {
     const loadTaskData = async () => {
       try {
         const loadedTasks = await loadTasks();
-        setTasks(loadedTasks.filter((task) => task.schedule?.enabled));
+        console.log("Loaded tasks:", loadedTasks);
+        setTasks(loadedTasks.filter((task) => task.show_in_calendar));
       } catch (error) {
         console.error("Error loading tasks:", error);
       }
