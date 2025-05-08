@@ -22,7 +22,7 @@ export const useNotes = () => {
         .select(
           `
           *,
-          author:profiles!notes_author_fkey (
+          profiles (
             id,
             first_name,
             last_name,
@@ -30,12 +30,20 @@ export const useNotes = () => {
           )
         `,
         )
-        .eq("author_id", user.id)
+        .eq("author", user.id)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
 
-      setNotes(data || []);
+      // Transform the data to match NoteWithAuthor interface
+      const transformedNotes =
+        data?.map((note) => ({
+          ...note,
+          author: note.profiles,
+          author_id: note.author,
+        })) || [];
+
+      setNotes(transformedNotes);
     } catch (error) {
       console.error("Error loading notes:", error);
       toast.error("Failed to load notes");
@@ -50,20 +58,43 @@ export const useNotes = () => {
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        console.error("No user found");
+        return;
+      }
 
-      const { data, error } = await supabase
+      console.log("Loading notebooks for user:", user.id);
+
+      // First, fetch notebooks
+      const { data: notebooksData, error: notebooksError } = await supabase
         .from("notebooks")
         .select("*")
         .eq("author_id", user.id)
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
+      if (notebooksError) {
+        console.error("Supabase error:", notebooksError);
+        throw notebooksError;
+      }
 
-      setNotebooks(data || []);
-    } catch (error) {
+      console.log("Loaded notebooks:", notebooksData);
+
+      // Transform the data to match our Notebook interface
+      const transformedNotebooks =
+        notebooksData?.map((notebook) => ({
+          ...notebook,
+          author: notebook.author_id,
+          filter_criteria: notebook.filter_criteria || {},
+          note_ids: notebook.note_ids || [],
+          is_dynamic: notebook.is_dynamic || false,
+        })) || [];
+
+      setNotebooks(transformedNotebooks);
+    } catch (error: any) {
       console.error("Error loading notebooks:", error);
-      toast.error("Failed to load notebooks");
+      toast.error(
+        `Failed to load notebooks: ${error.message || "Unknown error"}`,
+      );
     }
   };
 
@@ -80,33 +111,40 @@ export const useNotes = () => {
         title: "Untitled Note",
         content: "",
         labels: [],
-        author_id: user.id,
+        author: user.id,
         color_theme: "blue" as const,
         is_protected: false,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
 
-      const { data, error } = await supabase
+      // First insert the note
+      const { data: insertedNote, error: insertError } = await supabase
         .from("notes")
         .insert(newNote)
-        .select(
-          `
-          *,
-          author:profiles!notes_author_fkey (
-            id,
-            first_name,
-            last_name,
-            avatar_url
-          )
-        `,
-        )
+        .select()
         .single();
 
-      if (error) throw error;
+      if (insertError) throw insertError;
 
-      setNotes([data, ...notes]);
-      setSelectedNote(data);
+      // Then fetch the author details
+      const { data: authorData, error: authorError } = await supabase
+        .from("profiles")
+        .select("id, first_name, last_name, avatar_url")
+        .eq("id", user.id)
+        .single();
+
+      if (authorError) throw authorError;
+
+      // Combine note and author data
+      const noteWithAuthor: NoteWithAuthor = {
+        ...insertedNote,
+        author: authorData,
+        author_id: insertedNote.author,
+      };
+
+      setNotes([noteWithAuthor, ...notes]);
+      setSelectedNote(noteWithAuthor);
       toast.success("Note created successfully");
     } catch (error) {
       console.error("Error creating note:", error);
@@ -137,6 +175,7 @@ export const useNotes = () => {
         notes.map((note) => (note.id === updatedNote.id ? updatedNote : note)),
       );
       setSelectedNote(updatedNote);
+      toast.success("Note updated successfully");
     } catch (error) {
       console.error("Error updating note:", error);
       toast.error("Failed to update note");
@@ -163,8 +202,14 @@ export const useNotes = () => {
 
   // Load data on mount
   useEffect(() => {
-    loadNotes();
-    loadNotebooks();
+    const loadData = async () => {
+      try {
+        await Promise.all([loadNotes(), loadNotebooks()]);
+      } catch (error) {
+        console.error("Error loading data:", error);
+      }
+    };
+    loadData();
   }, []);
 
   return {

@@ -14,7 +14,7 @@ export interface Note {
   title: string;
   content: string;
   labels: string[];
-  author_id: string;
+  author: string;
   color_theme: "blue" | "red" | "green" | "yellow" | "purple";
   is_protected: boolean;
   pin_hash: string | null;
@@ -60,8 +60,9 @@ export interface FilterCriteria {
 
 export type NoteType = Note | Notebook;
 
-export interface NoteWithAuthor extends Omit<Note, "author_id"> {
+export interface NoteWithAuthor extends Omit<Note, "author"> {
   author: Author;
+  author_id: string;
 }
 
 export interface NotebookWithAuthor extends Notebook {
