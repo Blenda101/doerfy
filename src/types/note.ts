@@ -1,6 +1,12 @@
 import { Database } from "./supabase";
 
-export type ColorTheme = "blue" | "green" | "purple" | "red" | "yellow";
+export type ColorTheme =
+  | "blue"
+  | "green"
+  | "purple"
+  | "red"
+  | "yellow"
+  | "orange";
 
 export interface Note {
   id: string;
@@ -9,12 +15,19 @@ export interface Note {
   content: string;
   labels: string[];
   author: string;
-  color_theme: ColorTheme;
+  color_theme: "blue" | "red" | "green" | "yellow" | "purple";
   is_protected: boolean;
   pin_hash: string | null;
+  notebook_id?: string | null;
   created_at: string;
   updated_at: string;
-  notebook_id: string | null;
+}
+
+export interface Author {
+  id: string;
+  first_name: string;
+  last_name: string;
+  avatar_url: string | null;
 }
 
 export interface Notebook {
@@ -47,8 +60,9 @@ export interface FilterCriteria {
 
 export type NoteType = Note | Notebook;
 
-export interface NoteWithAuthor extends Note {
-  author_profile: Database["public"]["Tables"]["profiles"]["Row"];
+export interface NoteWithAuthor extends Omit<Note, "author"> {
+  author: Author;
+  author_id: string;
 }
 
 export interface NotebookWithAuthor extends Notebook {

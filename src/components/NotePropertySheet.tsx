@@ -5,19 +5,12 @@ import { Label } from "./ui/label";
 import { Switch } from "./ui/switch";
 import { LabelEditor } from "./LabelEditor";
 import { Note, Notebook, NoteWithAuthor } from "../types/note";
-import { cn } from "../lib/utils";
 import { Theme } from "../utils/theme";
-import {
-  X,
-  Lock,
-  Unlock,
-  StickyNote,
-  InfoIcon,
-  ShareIcon,
-  Share2,
-} from "lucide-react";
-import { NoteEditor } from "./NoteEditor";
+import { InfoIcon, Lock, Unlock, Share2 } from "lucide-react";
 import { colorVariants } from "../data/map";
+import { Editor } from "./forms/Editor";
+import { Sheet } from "./Sheet";
+import { cn } from "../lib/utils";
 
 interface NotePropertySheetProps {
   item: NoteWithAuthor;
@@ -66,85 +59,56 @@ export const NotePropertySheet: React.FC<NotePropertySheetProps> = ({
     }
   };
 
-  return (
-    <div
-      className={cn(
-        "min-w-[500px] h-screen flex flex-col border-l",
-        theme === "dark" ? "bg-[#1E293B]" : "bg-white",
-      )}
+  // Header actions for the Sheet component
+  const headerActions = (
+    <Button
+      variant="ghost"
+      size="icon"
+      className="h-10 w-10 rounded-full flex items-center justify-center"
     >
-      <div
-        className={cn(
-          "h-16 flex items-center px-6 border-b",
-          theme === "dark" ? "border-[#334155]" : "border-gray-200",
-        )}
-      >
-        <InfoIcon
-          className={cn(
-            "w-5 h-5 mr-2",
-            theme === "dark" ? "text-[#8B5CF6]" : "text-[#5036b0]",
-          )}
-        />
-        <h2
-          className={cn(
-            "text-xl font-light flex-1",
-            theme === "dark" ? "text-gray-300" : "text-gray-600",
-          )}
-        >
-          About Note
-        </h2>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-10 w-10 rounded-full flex items-center justify-center"
-        >
-          <Share2 className="h-5 w-5 mr-2" />
-        </Button>
+      <Share2 className="h-5 w-5 mr-2" />
+    </Button>
+  );
 
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onClose}
-          className="h-10 w-10 rounded-full"
-        >
-          <X className="h-5 w-5" />
-        </Button>
+  return (
+    <Sheet
+      title="About Note"
+      icon={<InfoIcon className="w-5 h-5" />}
+      onClose={onClose}
+      theme={theme}
+      headerActions={headerActions}
+    >
+      {/* Sticky Input Container */}
+      <div className="sticky top-0 bg-inherit z-50 -mt-6 pt-6 pb-4">
+        <Input
+          value={item.title}
+          onChange={(e) => onUpdate({ ...item, title: e.target.value })}
+          autoFocus
+          className={cn(
+            "text-xl font-semibold border-none p-0 focus-visible:ring-0 w-full",
+            theme === "dark" ? "bg-transparent text-white" : "bg-transparent",
+          )}
+          placeholder="Untitled Note"
+        />
       </div>
 
-      <div className="flex-1 p-6 space-y-6 overflow-y-auto">
-        <div>
-          <Label className="dark:text-slate-200">Title</Label>
-          {/* <Input
-            value={item.title}
-            onChange={(e) => onUpdate({ ...item, title: e.target.value })}
-            className="dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200"
-          /> */}
-          <Input
-            disabled={false}
-            value={item.title}
-            onChange={(e) => onUpdate({ ...item, title: e.target.value })}
-            autoFocus
-            className={cn(
-              "text-xl font-semibold mb-6 border-none p-0 focus-visible:ring-0 w-full",
-              theme === "dark" && "bg-transparent text-white",
-            )}
-            placeholder="Untitled Note"
-          />
-        </div>
+      {/* Scrollable Content */}
+      <div className="space-y-6">
+        {/* Note Description */}
         <div className="w-full">
-          <Label className="dark:text-slate-200">Description</Label>
-
-          <NoteEditor
+          <Label className="dark:text-slate-200 mb-2">Description</Label>
+          <Editor
             content={item.content}
             onChange={(content) => onUpdate({ ...item, content })}
             theme={theme}
             config={{
               placeholder: "Start writing...",
-              autofocus: true,
+              autofocus: false,
             }}
           />
         </div>
 
+        {/* Notebook Selection */}
         {"notebook_id" in item && notebooks.length > 0 && (
           <div>
             <Label className="dark:text-slate-200">Notebook</Label>
@@ -168,6 +132,7 @@ export const NotePropertySheet: React.FC<NotePropertySheetProps> = ({
           </div>
         )}
 
+        {/* Color Theme Selection */}
         <div>
           <Label className="dark:text-slate-200">Color Theme</Label>
           <div className="flex flex-wrap gap-4 mt-2">
@@ -188,10 +153,12 @@ export const NotePropertySheet: React.FC<NotePropertySheetProps> = ({
           </div>
         </div>
 
+        {/* Labels */}
         <div>
           <LabelEditor labels={item.labels} onChange={handleLabelsChange} />
         </div>
 
+        {/* Protection Settings */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
@@ -222,6 +189,6 @@ export const NotePropertySheet: React.FC<NotePropertySheetProps> = ({
           )}
         </div>
       </div>
-    </div>
+    </Sheet>
   );
 };

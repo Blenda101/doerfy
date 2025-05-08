@@ -8,6 +8,10 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        theme: {
+          light: "#5036b0",
+          dark: "#8B5CF6",
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -61,30 +65,30 @@ module.exports = {
       typography: {
         DEFAULT: {
           css: {
-            maxWidth: 'none',
-            color: 'inherit',
+            maxWidth: "none",
+            color: "inherit",
             p: {
-              marginTop: '1em',
-              marginBottom: '1em',
+              marginTop: "1em",
+              marginBottom: "1em",
             },
-            'ul, ol': {
-              paddingLeft: '1.5em',
-              marginTop: '1em',
-              marginBottom: '1em',
+            "ul, ol": {
+              paddingLeft: "1.5em",
+              marginTop: "1em",
+              marginBottom: "1em",
             },
             li: {
-              marginTop: '0.5em',
-              marginBottom: '0.5em',
+              marginTop: "0.5em",
+              marginBottom: "0.5em",
             },
             strong: {
-              fontWeight: '600',
-              color: 'inherit',
+              fontWeight: "600",
+              color: "inherit",
             },
             a: {
-              color: '#5036b0',
-              textDecoration: 'underline',
-              '&:hover': {
-                color: '#3a2783',
+              color: "#5036b0",
+              textDecoration: "underline",
+              "&:hover": {
+                color: "#3a2783",
               },
             },
           },
@@ -107,8 +111,5 @@ module.exports = {
     },
     container: { center: true, padding: "2rem", screens: { "2xl": "1400px" } },
   },
-  plugins: [
-    require('@tailwindcss/typography'),
-    require('tailwind-scrollbar')
-  ],
+  plugins: [require("@tailwindcss/typography"), require("tailwind-scrollbar")],
 };

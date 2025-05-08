@@ -1,9 +1,6 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "./ui/button";
-import { Checkbox } from "./ui/checkbox";
 import { Badge } from "./ui/badge";
-import { Input } from "./ui/input";
-import { PropertySheet } from "./PropertySheet";
 import { InlineTaskEditor } from "./InlineTaskEditor";
 import { TimeBoxConfig } from './TimeBoxDialog';
 
@@ -14,11 +11,8 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import {
-  Search,
-  Bell,
   MoreHorizontal,
   Plus,
-  ListIcon,
   InfoIcon,
   Edit,
   Trash2,
@@ -29,9 +23,8 @@ import {
 } from "lucide-react";
 import { Task } from "../types/task";
 import { cn } from "../lib/utils";
-import { Theme } from "../utils/theme";
 import { TaskHoverCard } from "./TaskHoverCard";
-import { createNewTask, validateTaskTitle } from "../utils/taskUtils";
+import { validateTaskTitle } from "../utils/taskUtils";
 
 interface TaskColumnProps {
   title: string;

@@ -7,7 +7,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "./ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "./ui/tabs";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Checkbox } from "./ui/checkbox";
@@ -23,7 +23,6 @@ import DatePicker from "react-datepicker";
 import {
   CalendarIcon,
   Clock,
-  RepeatIcon,
   Bell,
   HelpCircle,
 } from "lucide-react";

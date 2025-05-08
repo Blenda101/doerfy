@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Button } from './ui/button';
 import { ChevronDownIcon, Filter } from 'lucide-react';
 import { cn } from '../lib/utils';
 

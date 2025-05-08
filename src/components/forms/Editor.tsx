@@ -22,22 +22,27 @@ import {
   Undo,
   Redo,
 } from "lucide-react";
-import { Button } from "./ui/button";
-import { cn } from "../lib/utils";
-import { NoteEditorConfig } from "../types/note";
 import { common, createLowlight } from "lowlight";
+import { Button } from "../ui/button";
+import { cn } from "../../lib/utils";
 
 const lowlight = createLowlight(common);
 
-interface NoteEditorProps {
+export interface EditorConfig {
+  placeholder?: string;
+  autofocus?: boolean;
+  editable?: boolean;
+}
+
+interface EditorProps {
   content: string;
   onChange: (content: string) => void;
   onBlur?: () => void;
-  config?: NoteEditorConfig;
+  config?: EditorConfig;
   theme?: "light" | "dark";
 }
 
-export const NoteEditor: React.FC<NoteEditorProps> = ({
+export const Editor: React.FC<EditorProps> = ({
   content,
   onChange,
   onBlur,
@@ -78,7 +83,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
     ],
     content,
     editable: config.editable !== false,
-    autofocus: config.autofocus,
+    autofocus: config.autofocus || false,
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
     },
@@ -381,7 +386,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
       <EditorContent
         editor={editor}
         className="editor"
-        style={{ height: 200 }}
+        style={{ height: 120 }}
       />
     </div>
   );

@@ -1,6 +1,6 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Tasks } from "./screens/Tasks";
 import { Home } from "./screens/Home/Home";
 import { Profile } from "./screens/Profile/Profile";
@@ -12,9 +12,11 @@ import { Settings } from "./screens/Settings";
 import { Stories } from "./screens/Stories/Stories";
 import { Notifications } from "./screens/Notifications";
 import { AuthLayout } from "./components/AuthLayout";
-import { Toaster } from 'react-hot-toast';
-import 'react-big-calendar/lib/css/react-big-calendar.css';
-import './styles/calendar.css';
+import { Toaster } from "react-hot-toast";
+import "react-big-calendar/lib/css/react-big-calendar.css";
+import "./styles/calendar.css";
+import "./styles/editor.css";
+import Test from "./screens/Test";
 
 try {
   const root = document.getElementById("app");
@@ -26,22 +28,87 @@ try {
     <StrictMode>
       <BrowserRouter>
         <Routes>
+          <Route path="/test" element={<Test />} />
           <Route path="/auth" element={<Auth />} />
-          <Route path="/" element={<AuthLayout><Home /></AuthLayout>} />
-          <Route path="/tasks" element={<AuthLayout><Tasks /></AuthLayout>} />
-          <Route path="/stories" element={<AuthLayout><Stories /></AuthLayout>} />
-          <Route path="/content" element={<AuthLayout><Content /></AuthLayout>} />
-          <Route path="/notes" element={<AuthLayout><Notes /></AuthLayout>} />
-          <Route path="/help" element={<AuthLayout><Help /></AuthLayout>} />
-          <Route path="/settings" element={<AuthLayout><Settings /></AuthLayout>} />
-          <Route path="/notifications" element={<AuthLayout><Notifications /></AuthLayout>} />
-          <Route path="/profile" element={<AuthLayout><Profile /></AuthLayout>} />
+          <Route
+            path="/"
+            element={
+              <AuthLayout>
+                <Home />
+              </AuthLayout>
+            }
+          />
+          <Route
+            path="/tasks"
+            element={
+              <AuthLayout>
+                <Tasks />
+              </AuthLayout>
+            }
+          />
+          <Route
+            path="/stories"
+            element={
+              <AuthLayout>
+                <Stories />
+              </AuthLayout>
+            }
+          />
+          <Route
+            path="/content"
+            element={
+              <AuthLayout>
+                <Content />
+              </AuthLayout>
+            }
+          />
+          <Route
+            path="/notes"
+            element={
+              <AuthLayout>
+                <Notes />
+              </AuthLayout>
+            }
+          />
+          <Route
+            path="/help"
+            element={
+              <AuthLayout>
+                <Help />
+              </AuthLayout>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <AuthLayout>
+                <Settings />
+              </AuthLayout>
+            }
+          />
+          <Route
+            path="/notifications"
+            element={
+              <AuthLayout>
+                <Notifications />
+              </AuthLayout>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <AuthLayout>
+                <Profile />
+              </AuthLayout>
+            }
+          />
         </Routes>
         <Toaster position="top-right" />
       </BrowserRouter>
-    </StrictMode>
+    </StrictMode>,
   );
 } catch (error) {
-  console.error('Error rendering application:', error);
-  document.body.innerHTML = '<div style="padding: 20px;">Error loading application. Please check the console for details.</div>';
+  console.error("Error rendering application:", error);
+  document.body.innerHTML =
+    '<div style="padding: 20px;">Error loading application. Please check the console for details.</div>';
 }
