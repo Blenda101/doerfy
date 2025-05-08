@@ -25,6 +25,7 @@ import { cn } from "../../lib/utils";
 import { Filter, ListIcon, CalendarIcon } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { Task } from "../../types/task";
+import ToggleButton from "../../components/ui/toggle";
 
 const STORAGE_KEYS = {
   ACTIVE_TAB: "activeTaskTab",
@@ -243,32 +244,6 @@ export const Tasks: React.FC = () => {
   );
   const selectedTask = tasks.find((t) => t.id === selectedTaskId);
 
-  const tabs = (
-    <TabsList className="bg-transparent border-b-0">
-      <TabsTrigger
-        value="timebox"
-        className="flex items-center gap-2 data-[state=active]:bg-transparent"
-      >
-        <Filter className="w-4 h-4" />
-        Time Box
-      </TabsTrigger>
-      <TabsTrigger
-        value="lists"
-        className="flex items-center gap-2 data-[state=active]:bg-transparent"
-      >
-        <ListIcon className="w-4 h-4" />
-        Lists
-      </TabsTrigger>
-      <TabsTrigger
-        value="calendar"
-        className="flex items-center gap-2 data-[state=active]:bg-transparent"
-      >
-        <CalendarIcon className="w-4 h-4" />
-        Calendar
-      </TabsTrigger>
-    </TabsList>
-  );
-
   return (
     <div
       className={cn(
@@ -292,7 +267,38 @@ export const Tasks: React.FC = () => {
         <TasksHeader
           {...getHeaderProps()}
           theme={theme}
-          tabs={tabs}
+          tabs={
+            <ToggleButton
+              size={24}
+              options={[
+                {
+                  value: "timebox",
+                  label: "Time",
+                  icon: (
+                    <Filter className="text-theme-light dark:text-theme-dark" />
+                  ),
+                },
+                {
+                  value: "lists",
+                  label: "Lists",
+                  icon: (
+                    <ListIcon className="text-theme-light dark:text-theme-dark" />
+                  ),
+                },
+                {
+                  value: "calendar",
+                  label: "Calendar",
+                  icon: (
+                    <CalendarIcon className="text-theme-light dark:text-theme-dark" />
+                  ),
+                },
+              ]}
+              activeOption={activeTab}
+              onChange={(value) =>
+                setActiveTab(value as "timebox" | "lists" | "calendar")
+              }
+            />
+          }
           onFilterClick={handleFilterClick}
         />
         <FilterHeader

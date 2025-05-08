@@ -45,7 +45,7 @@ export const TasksHeader: React.FC<TasksHeaderProps> = ({
         theme === "dark" ? "border-[#334155] bg-[#0F172A]" : "border-gray-200",
       )}
     >
-      <div className="flex items-center">
+      <div className="flex items-center w-[120px]">
         {React.cloneElement(icon as React.ReactElement, {
           className: cn(
             "w-6 h-6 mr-3",
