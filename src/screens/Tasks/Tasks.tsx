@@ -354,7 +354,7 @@ export const Tasks: React.FC = () => {
           {activePanel === "property" && selectedTask && (
             <div
               className={cn(
-                "w-[500px] transition-transform duration-300 ease-in-out transform",
+                "transition-transform duration-300 ease-in-out transform",
                 "border-l",
                 theme === "dark"
                   ? "border-[#334155] bg-[#1E293B]"

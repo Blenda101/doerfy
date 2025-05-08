@@ -1,4 +1,4 @@
-import { Task, TimeStage, AgingStatus } from '../types/task';
+import { Task, AgingStatus } from '../types/task';
 import { TimeBox } from '../types/timeBox';
 
 export function calculateTaskAge(task: Task): number {

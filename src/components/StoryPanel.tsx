@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
-import { Textarea } from './ui/textarea';
 import { RichTextEditor } from './RichTextEditor';
 import { LabelEditor } from './LabelEditor';
 import { Story, StoryType } from '../types/story';
@@ -10,11 +9,9 @@ import { cn } from '../lib/utils';
 import { Theme } from '../utils/theme';
 import {
   X,
-  Share2,
   Maximize2,
   ChevronDown,
   Calendar,
-  Hash,
   BookOpen,
   Target,
   ClipboardList,

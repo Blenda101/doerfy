@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Button } from './ui/button';
-import { Home, CheckCircle as CircleCheckBig, Calendar, LayoutGrid, HelpCircle, Settings, ChevronRight, ChevronLeft, Bell, Sun, Moon, List as ListIcon, User, BookOpen, StickyNote } from 'lucide-react';
+import { Home, CheckCircle as CircleCheckBig, LayoutGrid, HelpCircle, Settings, ChevronRight, ChevronLeft, Bell, Sun, Moon, User, BookOpen, StickyNote } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { Theme } from '../utils/theme';
 import { supabase } from '../utils/supabaseClient';

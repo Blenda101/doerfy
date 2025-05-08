@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '../../components/ui/button';
 import { Checkbox } from '../../components/ui/checkbox';
 import { Badge } from '../../components/ui/badge';
-import { Input } from '../../components/ui/input';
 import { PropertySheet } from '../../components/PropertySheet';
 import { InlineTaskEditor } from '../../components/InlineTaskEditor';
 import {
@@ -12,11 +11,8 @@ import {
   DropdownMenuTrigger,
 } from '../../components/ui/dropdown-menu';
 import {
-  Search,
-  Bell,
   MoreHorizontal,
   Plus,
-  ListIcon,
   InfoIcon,
   Edit,
   Trash2,
@@ -28,7 +24,6 @@ import { Theme } from '../../utils/theme';
 import { TaskHoverCard } from '../../components/TaskHoverCard';
 import { createNewTask } from '../../utils/taskUtils';
 import { toast } from 'react-hot-toast';
-import { en } from '@supabase/auth-ui-shared';
 
 interface List {
   id: string;

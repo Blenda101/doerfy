@@ -11,12 +11,11 @@ import {
 import { Button } from '../../components/ui/button';
 import { Switch } from '../../components/ui/switch';
 import { Input } from '../../components/ui/input';
-import { Label } from '../../components/ui/label';
 import { Sidebar } from '../../components/Sidebar';
 import { getAllUsers, updateUserRole, deleteUser } from '../../utils/supabaseClient';
 import { cn } from '../../lib/utils';
 import { Theme, getInitialTheme, setTheme } from '../../utils/theme';
-import { Users, Search, Trash2, Shield } from 'lucide-react';
+import { Search, Trash2, Shield } from 'lucide-react';
 import {
   useToast
 } from '../../components/ui/use-toast';

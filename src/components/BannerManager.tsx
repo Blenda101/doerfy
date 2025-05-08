@@ -13,16 +13,11 @@ import { Textarea } from "./ui/textarea";
 import { Switch } from "./ui/switch";
 import { Slider } from "./ui/slider";
 import { useDropzone } from "react-dropzone";
-import { DragDropContext, Droppable, Draggable } from "@dnd-kit/core";
 import { cn } from "../lib/utils";
 import {
   Image as ImageIcon,
   Music,
-  Quote,
   X,
-  GripVertical,
-  Upload,
-  AlertCircle,
 } from "lucide-react";
 import { getCurrentUser, supabase } from "../utils/supabaseClient";
 

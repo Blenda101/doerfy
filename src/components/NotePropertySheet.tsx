@@ -7,17 +7,9 @@ import { LabelEditor } from "./LabelEditor";
 import { Note, Notebook, NoteWithAuthor } from "../types/note";
 import { cn } from "../lib/utils";
 import { Theme } from "../utils/theme";
-import {
-  X,
-  Lock,
-  Unlock,
-  StickyNote,
-  InfoIcon,
-  ShareIcon,
-  Share2,
-} from "lucide-react";
-import { NoteEditor } from "./NoteEditor";
+import { X, Lock, Unlock, InfoIcon, Share2 } from "lucide-react";
 import { colorVariants } from "../data/map";
+import { Editor } from "./forms/Editor";
 
 interface NotePropertySheetProps {
   item: NoteWithAuthor;
@@ -69,7 +61,7 @@ export const NotePropertySheet: React.FC<NotePropertySheetProps> = ({
   return (
     <div
       className={cn(
-        "min-w-[500px] h-screen flex flex-col border-l",
+        "min-w-[500px] w-[500px] h-screen flex flex-col border-l",
         theme === "dark" ? "bg-[#1E293B]" : "bg-white",
       )}
     >
@@ -130,11 +122,23 @@ export const NotePropertySheet: React.FC<NotePropertySheetProps> = ({
             )}
             placeholder="Untitled Note"
           />
+          {/* <Input
+            ref={titleInputRef}
+            value={item.title}
+            onChange={(e) => onUpdate({ ...item, title: e.target.value })}
+            onKeyDown={handleTitleKeyDown}
+            onBlur={handleTitleSave}
+            className={cn(
+              "text-[21px] font-medium",
+              theme === "dark"
+                ? "bg-slate-700 border-slate-600 text-white"
+                : "bg-white",
+            )}
+          /> */}
         </div>
         <div className="w-full">
-          <Label className="dark:text-slate-200">Description</Label>
-
-          <NoteEditor
+          <Label className="dark:text-slate-200 mb-2">Description</Label>
+          <Editor
             content={item.content}
             onChange={(content) => onUpdate({ ...item, content })}
             theme={theme}

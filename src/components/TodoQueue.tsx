@@ -4,7 +4,7 @@ import { Badge } from './ui/badge';
 import { StoryWithRelations } from '../types/story';
 import { cn } from '../lib/utils';
 import { Theme } from '../utils/theme';
-import { ChevronDown, ChevronUp, Info, MoreHorizontal, Plus } from 'lucide-react';
+import { ChevronDown, ChevronUp, Info, MoreHorizontal } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
