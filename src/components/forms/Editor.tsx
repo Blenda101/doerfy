@@ -83,7 +83,7 @@ export const Editor: React.FC<EditorProps> = ({
     ],
     content,
     editable: config.editable !== false,
-    autofocus: config.autofocus,
+    autofocus: config.autofocus || false,
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
     },
@@ -386,7 +386,7 @@ export const Editor: React.FC<EditorProps> = ({
       <EditorContent
         editor={editor}
         className="editor"
-        style={{ height: 200 }}
+        style={{ height: 120 }}
       />
     </div>
   );
