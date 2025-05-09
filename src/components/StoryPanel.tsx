@@ -28,6 +28,8 @@ import "react-datepicker/dist/react-datepicker.css";
 import { Editor } from "./forms/Editor";
 import { Sheet } from "./Sheet";
 import { EditableTitle } from "./forms/EditableTitle";
+import { EditableProperty } from "./EditableProperty";
+import useStories from "../hooks/useStories";
 
 interface StoryPanelProps {
   story: Story;
@@ -42,38 +44,14 @@ export const StoryPanel: React.FC<StoryPanelProps> = ({
   onClose,
   onUpdate,
   theme = "light",
-  availableParents = [],
 }) => {
+  const { stories } = useStories(getParentType(story.type));
   const handleUpdate = (updates: Partial<Story>) => {
     onUpdate({
       ...story,
       ...updates,
       updatedAt: new Date().toISOString(),
     });
-  };
-
-  const getStoryTypeIcon = (type: StoryType) => {
-    switch (type) {
-      case "theme":
-        return <Target className="w-6 h-6" />;
-      case "mega_do":
-        return <ClipboardList className="w-6 h-6" />;
-      case "project":
-        return <Folder className="w-6 h-6" />;
-      case "todo":
-        return <CheckSquare className="w-6 h-6" />;
-      default:
-        return <BookOpen className="w-6 h-6" />;
-    }
-  };
-
-  const getStoryTypeLabel = (type: StoryType) => {
-    switch (type) {
-      case "mega_do":
-        return "Mega Do";
-      default:
-        return type.charAt(0).toUpperCase() + type.slice(1);
-    }
   };
 
   return (
@@ -83,27 +61,26 @@ export const StoryPanel: React.FC<StoryPanelProps> = ({
       onClose={onClose}
       theme={theme}
     >
-      {/* Story Type and ID Badge */}
-      <div
-        className={cn(
-          "inline-flex items-center space-x-3 px-4 py-2 rounded-lg",
-          theme === "dark" ? "bg-slate-700" : "bg-gray-50",
-        )}
-      >
-        {getStoryTypeIcon(story.type)}
-        <span
-          className={cn(
-            "font-mono text-sm",
-            theme === "dark" ? "text-slate-300" : "text-gray-600",
-          )}
-        >
-          {story.id}
-        </span>
-      </div>
+      {/* Story Parent Selection */}
 
-      {/* Story Type and ID Badge */}
+      {story.type !== "theme" && (
+        <div className="flex justify-center">
+          <EditableProperty
+            label=""
+            placeholder="Select Parent"
+            value={story.parentId!}
+            options={stories.map((story) => ({
+              value: story.id,
+              label: story.title,
+            }))}
+            onChange={(parentId) => handleUpdate({ parentId })}
+            disabled={stories.length === 0}
+          />
+        </div>
+      )}
+      {/* Story Title */}
       <EditableTitle
-        title={story.title || "Untitled"}
+        title={story.title}
         onTitleChange={(title) => handleUpdate({ title })}
         theme={theme}
       />
@@ -143,38 +120,6 @@ export const StoryPanel: React.FC<StoryPanelProps> = ({
           story.type === "project" ||
           story.type === "todo") && (
           <>
-            <div>
-              <Label>Parent</Label>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-between",
-                      theme === "dark" &&
-                        "bg-slate-700 border-slate-600 text-white",
-                    )}
-                  >
-                    {story.parentId
-                      ? availableParents.find((p) => p.id === story.parentId)
-                          ?.title || "Select Parent"
-                      : "Select Parent"}
-                    <ChevronDown className="h-4 w-4 opacity-50" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-full">
-                  {availableParents.map((parent) => (
-                    <DropdownMenuItem
-                      key={parent.id}
-                      onClick={() => handleUpdate({ parentId: parent.id })}
-                    >
-                      {parent.title}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-
             <div>
               <Label>Story</Label>
               <Editor
@@ -254,4 +199,26 @@ export const StoryPanel: React.FC<StoryPanelProps> = ({
       </div>
     </Sheet>
   );
+};
+
+function getParentType(storyType: StoryType): StoryType | null {
+  switch (storyType) {
+    case "mega_do":
+      return "theme";
+    case "project":
+      return "mega_do";
+    case "todo":
+      return "project";
+    default:
+      return null;
+  }
+}
+
+const getStoryTypeLabel = (type: StoryType) => {
+  switch (type) {
+    case "mega_do":
+      return "Mega Do";
+    default:
+      return type.charAt(0).toUpperCase() + type.slice(1);
+  }
 };

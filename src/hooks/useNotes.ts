@@ -175,7 +175,7 @@ export const useNotes = () => {
         notes.map((note) => (note.id === updatedNote.id ? updatedNote : note)),
       );
       setSelectedNote(updatedNote);
-      toast.success("Note updated successfully");
+      // toast.success("Note updated successfully");
     } catch (error) {
       console.error("Error updating note:", error);
       toast.error("Failed to update note");

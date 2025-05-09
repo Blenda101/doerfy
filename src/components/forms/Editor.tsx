@@ -81,7 +81,6 @@ export const Editor: React.FC<EditorProps> = ({
         },
       }),
     ],
-    content,
     editable: config.editable !== false,
     autofocus: config.autofocus || false,
     onUpdate: ({ editor }) => {
@@ -89,16 +88,35 @@ export const Editor: React.FC<EditorProps> = ({
     },
     onBlur: () => {
       if (onBlur) onBlur();
+      // setIsFocused(false);
     },
     onFocus: () => setIsFocused(true),
   });
 
   useEffect(() => {
+    editor?.commands.setContent(content);
+  }, [content]);
+
+  useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        editorRef.current &&
-        !editorRef.current.contains(event.target as Node)
-      ) {
+      if (!editorRef.current) return;
+
+      const target = event.target as HTMLElement;
+
+      // Check if the click is inside the editor
+      const isEditorClick = editorRef.current.contains(target);
+
+      // Check for all possible editor-related elements
+      const isEditorElement =
+        target.closest(".ProseMirror") || // Editor content
+        target.closest("[data-tippy-root]") || // Tooltips
+        target.closest("button") || // Buttons
+        target.closest("input") || // Input fields
+        target.closest("select") || // Select dropdowns
+        target.closest('[contenteditable="true"]') || // Editable content
+        target.closest(".tiptap-menu-item"); // Any custom menu items
+
+      if (!isEditorClick && !isEditorElement) {
         setIsFocused(false);
         setShowLinkInput(false);
         if (editor) {
@@ -153,6 +171,11 @@ export const Editor: React.FC<EditorProps> = ({
         }
       }}
     >
+      <EditorContent
+        editor={editor}
+        className="editor"
+        style={{ height: 120 }}
+      />
       <div
         className={cn(
           "sticky top-0 z-10",
@@ -383,11 +406,6 @@ export const Editor: React.FC<EditorProps> = ({
           </div>
         )}
       </div>
-      <EditorContent
-        editor={editor}
-        className="editor"
-        style={{ height: 120 }}
-      />
     </div>
   );
 };

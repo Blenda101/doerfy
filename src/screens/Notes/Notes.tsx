@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { Sidebar } from "../../components/Sidebar";
 import { TasksHeader } from "../../components/TasksHeader";
-import { NotePropertySheet } from "../../modules/notes/NotePropertySheet";
 import { Input } from "../../components/ui/input";
 import { Button } from "../../components/ui/button";
 import { Theme, getInitialTheme } from "../../utils/theme";
@@ -9,6 +8,7 @@ import { cn } from "../../lib/utils";
 import { StickyNote, Search } from "lucide-react";
 import { NoteCard } from "../../components/NoteCard";
 import { useNotes } from "../../hooks/useNotes";
+import { NotePropertySheet } from "../../modules/notes/partials/NotePropertySheet";
 
 /**
  * Notes Screen Component
@@ -130,6 +130,15 @@ export const Notes: React.FC = () => {
           </div>
 
           {/* Note Property Sheet */}
+          {/* {selectedNote && (
+            <NoteSheet
+              item={selectedNote}
+              onClose={() => setSelectedNote(null)}
+              onUpdate={updateNote}
+              theme={theme}
+              notebooks={notebooks}
+            />
+          )} */}
           {selectedNote && (
             <NotePropertySheet
               item={selectedNote}
