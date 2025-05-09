@@ -1,5 +1,4 @@
 import React from "react";
-import { PropertySheet } from "../../components/PropertySheet";
 import { TaskItem } from "../../components/TaskItem";
 import { ListHeader } from "../../components/ListHeader";
 import { InlineTaskEditor } from "../../components/InlineTaskEditor";
@@ -8,6 +7,7 @@ import { Theme } from "../../utils/theme";
 import { useTasks } from "../../hooks/useTasks";
 import { List } from "../../hooks/useLists";
 import { AddListDialog } from "../../components/AddListDialog";
+import { Task } from "../../types/task";
 
 interface TaskListProps {
   theme?: Theme;
@@ -15,6 +15,7 @@ interface TaskListProps {
   setIsAddListOpen: (open: boolean) => void;
   lists: List[];
   setLists: (lists: List[]) => void;
+  onTaskSelect: (task: Task) => void;
 }
 
 export const TaskList: React.FC<TaskListProps> = ({
@@ -23,23 +24,21 @@ export const TaskList: React.FC<TaskListProps> = ({
   setIsAddListOpen,
   lists,
   setLists,
+  onTaskSelect,
 }) => {
   const {
     isLoading,
     error,
-    selectedTask,
     editingTaskId,
     newTaskList,
     newTaskTitle,
     activeList,
     tasksByList,
-    setSelectedTask,
     setEditingTaskId,
     setNewTaskList,
     setNewTaskTitle,
     setActiveList,
     handleTaskComplete,
-    handleTaskSelect,
     handleTaskUpdate,
     handleNewTask,
     handleTaskTitleUpdate,
@@ -62,7 +61,6 @@ export const TaskList: React.FC<TaskListProps> = ({
     );
   }
 
-  console.log({ lists, tasksByList });
   return (
     <div className="flex flex-1 h-full">
       <div className="flex-1 flex flex-col">
@@ -110,10 +108,10 @@ export const TaskList: React.FC<TaskListProps> = ({
                         key={task.id}
                         task={task}
                         theme={theme}
-                        isSelected={selectedTask?.id === task.id}
+                        isSelected={false}
                         isEditing={editingTaskId === task.id}
                         newTaskTitle={newTaskTitle}
-                        onTaskSelect={handleTaskSelect}
+                        onTaskSelect={() => onTaskSelect(task)}
                         onTaskComplete={handleTaskComplete}
                         onEditStart={(taskId) => {
                           setEditingTaskId(taskId);
@@ -136,26 +134,6 @@ export const TaskList: React.FC<TaskListProps> = ({
         </div>
       </div>
 
-      {/* {selectedTask && (
-        <div
-          className={cn(
-            "border-l",
-            theme === "dark"
-              ? "border-[#334155] bg-[#1E293B]"
-              : "border-gray-200",
-          )}
-        >
-          <PropertySheet
-            task={selectedTask}
-            onClose={() => setSelectedTask(null)}
-            onTaskUpdate={handleTaskUpdate}
-            theme={theme}
-            availableLists={lists.map((list) => list.name)}
-          />
-        </div>
-      )} */}
-
-      {/* Add List Dialog */}
       <AddListDialog
         isOpen={isAddListOpen}
         onClose={() => setIsAddListOpen(false)}

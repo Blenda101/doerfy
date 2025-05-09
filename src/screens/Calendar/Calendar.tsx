@@ -8,7 +8,6 @@ import { format, parse, startOfWeek, getDay } from "date-fns";
 import { enUS } from "date-fns/locale";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
-import { PropertySheet } from "../../components/PropertySheet";
 import { TaskHoverCard } from "../../components/TaskHoverCard";
 import { Task } from "../../types/task";
 import { loadTasks, saveTasks } from "../../utils/storage";
@@ -16,9 +15,12 @@ import { cn } from "../../lib/utils";
 import { Theme } from "../../utils/theme";
 import { Plus } from "lucide-react";
 import { createNewTask } from "../../utils/taskUtils";
+import { List } from "../../hooks/useLists";
+import { Story } from "../../types/story";
 
 interface CalendarProps {
   theme?: Theme;
+  onTaskSelect: (task: Task) => void;
 }
 
 const locales = {
@@ -47,9 +49,11 @@ interface NewTaskState {
   title: string;
 }
 
-export const Calendar: React.FC<CalendarProps> = ({ theme = "light" }) => {
+export const Calendar: React.FC<CalendarProps> = ({
+  theme = "light",
+  onTaskSelect,
+}) => {
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [view, setView] = useState(Views.MONTH);
   const [date, setDate] = useState(new Date());
   const [hoveredDate, setHoveredDate] = useState<Date | null>(null);
@@ -64,7 +68,7 @@ export const Calendar: React.FC<CalendarProps> = ({ theme = "light" }) => {
       try {
         const loadedTasks = await loadTasks();
         console.log("Loaded tasks:", loadedTasks);
-        setTasks(loadedTasks.filter((task) => task.show_in_calendar));
+        setTasks(loadedTasks.filter((task) => task.showInCalendar));
       } catch (error) {
         console.error("Error loading tasks:", error);
       }
@@ -80,7 +84,6 @@ export const Calendar: React.FC<CalendarProps> = ({ theme = "light" }) => {
       );
       await saveTasks(updatedTasks);
       setTasks(updatedTasks);
-      setSelectedTask(updatedTask);
     } catch (error) {
       console.error("Error updating task:", error);
     }
@@ -139,7 +142,6 @@ export const Calendar: React.FC<CalendarProps> = ({ theme = "light" }) => {
       const updatedTasks = [task, ...tasks];
       await saveTasks(updatedTasks);
       setTasks(updatedTasks);
-      setSelectedTask(task);
       setNewTask({
         date: null,
         isEditing: false,
@@ -324,53 +326,33 @@ export const Calendar: React.FC<CalendarProps> = ({ theme = "light" }) => {
     );
   };
   return (
-    <div className="flex flex-1 h-full">
-      <div className="flex-1 p-6">
-        <BigCalendar
-          localizer={localizer}
-          events={events}
-          startAccessor="start"
-          endAccessor="end"
-          style={{ height: "calc(100vh - 160px)" }}
-          views={[Views.MONTH, Views.WEEK, Views.DAY]}
-          view={view}
-          onView={setView}
-          date={date}
-          onNavigate={setDate}
-          components={{
-            event: CustomEvent,
-            toolbar: CustomToolbar,
-            dateCellWrapper: DayCell,
-          }}
-          onSelectEvent={(event: CalendarEvent) => setSelectedTask(event.task)}
-          onEventDrop={handleEventDrop}
-          draggableAccessor={() => true}
-          className={cn(
-            "rounded-lg border",
-            theme === "dark"
-              ? "border-slate-700 bg-slate-800 text-white"
-              : "border-gray-200",
-          )}
-        />
-      </div>
-
-      {selectedTask && (
-        <div
-          className={cn(
-            "border-l",
-            theme === "dark"
-              ? "border-[#334155] bg-[#1E293B]"
-              : "border-gray-200",
-          )}
-        >
-          <PropertySheet
-            task={selectedTask}
-            onClose={() => setSelectedTask(null)}
-            onTaskUpdate={handleTaskUpdate}
-            theme={theme}
-          />
-        </div>
-      )}
+    <div className="flex-1 p-6">
+      <BigCalendar
+        localizer={localizer}
+        events={events}
+        startAccessor="start"
+        endAccessor="end"
+        style={{ height: "calc(100vh - 160px)" }}
+        views={[Views.MONTH, Views.WEEK, Views.DAY]}
+        view={view}
+        onView={setView}
+        date={date}
+        onNavigate={setDate}
+        components={{
+          event: CustomEvent,
+          toolbar: CustomToolbar,
+          dateCellWrapper: DayCell,
+        }}
+        onSelectEvent={(event: CalendarEvent) => onTaskSelect(event.task)}
+        onEventDrop={handleEventDrop}
+        draggableAccessor={() => true}
+        className={cn(
+          "rounded-lg border",
+          theme === "dark"
+            ? "border-slate-700 bg-slate-800 text-white"
+            : "border-gray-200",
+        )}
+      />
     </div>
   );
 };

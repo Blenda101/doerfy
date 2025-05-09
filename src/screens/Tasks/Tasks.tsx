@@ -65,6 +65,8 @@ export const Tasks: React.FC = () => {
   const { filterTasks } = useFilterStore();
   const { lists, setLists } = useLists();
   const { stories, setStories } = useStories();
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+
   // Theme Management
   useEffect(() => {
     setThemeUtil(theme);
@@ -265,11 +267,6 @@ export const Tasks: React.FC = () => {
     }
   };
 
-  // Filter tasks based on active tab
-  const filteredTasks = filterTasks(tasks, activeTab);
-  const selectedTask = tasks.find((t) => t.id === selectedTaskId);
-  console.log(stories);
-  // Render Component
   return (
     <div
       className={cn(
@@ -347,8 +344,12 @@ export const Tasks: React.FC = () => {
                   <PtbTimeBox
                     theme={theme}
                     tasks={tasks}
-                    onTaskSelect={handleTaskSelect}
-                    selectedTaskId={selectedTaskId}
+                    onTaskSelect={(taskId) =>
+                      setSelectedTask(
+                        tasks.find((t) => t.id === taskId) || null,
+                      )
+                    }
+                    selectedTaskId={selectedTask?.id}
                     onTaskUpdate={handleTaskUpdate}
                   />
                 </TabsContent>
@@ -359,10 +360,14 @@ export const Tasks: React.FC = () => {
                     setIsAddListOpen={setIsAddListOpen}
                     lists={lists}
                     setLists={setLists}
+                    onTaskSelect={(task) => setSelectedTask(task)}
                   />
                 </TabsContent>
                 <TabsContent value="calendar" className="flex-1 m-0">
-                  <Calendar theme={theme} />
+                  <Calendar
+                    theme={theme}
+                    onTaskSelect={(task) => setSelectedTask(task)}
+                  />
                 </TabsContent>
               </>
             )}
@@ -385,7 +390,7 @@ export const Tasks: React.FC = () => {
             </div>
           )}
 
-          {activePanel === "property" && selectedTask && (
+          {selectedTask && (
             <div
               className={cn(
                 "transition-transform duration-300 ease-in-out transform",
@@ -397,7 +402,7 @@ export const Tasks: React.FC = () => {
             >
               <PropertySheet
                 task={selectedTask}
-                onClose={handlePanelClose}
+                onClose={() => setSelectedTask(null)}
                 onTaskUpdate={handleTaskUpdate}
                 theme={theme}
                 lists={lists}
