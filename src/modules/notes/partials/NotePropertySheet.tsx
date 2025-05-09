@@ -1,17 +1,17 @@
 import React, { useState } from "react";
-import { Button } from "../../components/ui/button";
-import { Input } from "../../components/ui/input";
-import { Label } from "../../components/ui/label";
-import { Switch } from "../../components/ui/switch";
-import { LabelEditor } from "../../components/LabelEditor";
-import { Note, Notebook, NoteWithAuthor } from "../../types/note";
-import { Theme } from "../../utils/theme";
+import { Button } from "../../../components/ui/button";
+import { Input } from "../../../components/ui/input";
+import { Label } from "../../../components/ui/label";
+import { Switch } from "../../../components/ui/switch";
+import { LabelEditor } from "../../../components/LabelEditor";
+import { Note, Notebook, NoteWithAuthor } from "../../../types/note";
+import { Theme } from "../../../utils/theme";
 import { InfoIcon, Lock, Unlock, Share2 } from "lucide-react";
-import { colorVariants } from "../../data/map";
-import { Editor } from "../../components/forms/Editor";
-import { Sheet } from "../../components/Sheet";
-import { cn } from "../../lib/utils";
-import { EditableTitle } from "../../components/forms/EditableTitle";
+import { colorVariants } from "../../../data/map";
+import { Editor } from "../../../components/forms/Editor";
+import { Sheet } from "../../../components/Sheet";
+import { cn } from "../../../lib/utils";
+import { EditableTitle } from "../../../components/forms/EditableTitle";
 
 interface NotePropertySheetProps {
   item: NoteWithAuthor;
@@ -85,7 +85,6 @@ export const NotePropertySheet: React.FC<NotePropertySheetProps> = ({
         onTitleChange={(title) => onUpdate({ ...item, title })}
         theme={theme}
       />
-
       {/* Note Description */}
       <div className="w-full">
         <Label className="dark:text-slate-200 mb-2">Description</Label>
@@ -99,7 +98,6 @@ export const NotePropertySheet: React.FC<NotePropertySheetProps> = ({
           }}
         />
       </div>
-
       {/* Notebook Selection */}
       {"notebook_id" in item && notebooks.length > 0 && (
         <div>
@@ -123,7 +121,6 @@ export const NotePropertySheet: React.FC<NotePropertySheetProps> = ({
           </select>
         </div>
       )}
-
       {/* Color Theme Selection */}
       <div>
         <Label className="dark:text-slate-200">Color Theme</Label>
@@ -144,12 +141,10 @@ export const NotePropertySheet: React.FC<NotePropertySheetProps> = ({
           ))}
         </div>
       </div>
-
       {/* Labels */}
       <div>
         <LabelEditor labels={item.labels} onChange={handleLabelsChange} />
       </div>
-
       {/* Protection Settings */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">

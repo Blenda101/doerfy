@@ -11,7 +11,7 @@ interface EditableTitleProps {
 }
 
 export const EditableTitle: React.FC<EditableTitleProps> = ({
-  title,
+  title = "",
   onTitleChange,
   theme = "light",
   className,
