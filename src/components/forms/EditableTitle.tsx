@@ -59,6 +59,7 @@ export const EditableTitle: React.FC<EditableTitleProps> = ({
           onChange={(e) => setTitleValue(e.target.value)}
           onKeyDown={handleTitleKeyDown}
           onBlur={handleTitleSave}
+          placeholder="Title"
           className={cn(
             "text-[21px] font-medium",
             theme === "dark"
@@ -74,7 +75,7 @@ export const EditableTitle: React.FC<EditableTitleProps> = ({
           )}
           onClick={() => setIsEditing(true)}
         >
-          {title}
+          {title || "Untitled"}
         </h1>
       )}
     </div>

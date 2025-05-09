@@ -103,7 +103,7 @@ export const StoryPanel: React.FC<StoryPanelProps> = ({
 
       {/* Story Type and ID Badge */}
       <EditableTitle
-        title={story.title || "Untitled"}
+        title={story.title}
         onTitleChange={(title) => handleUpdate({ title })}
         theme={theme}
       />

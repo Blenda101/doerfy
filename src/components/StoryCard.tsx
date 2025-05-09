@@ -12,6 +12,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
+import useEditorContent from "../hooks/useEditorContent";
 
 interface StoryCardProps {
   story: StoryWithRelations;
@@ -30,6 +31,7 @@ export const StoryCard: React.FC<StoryCardProps> = ({
   onDelete,
   onFilterByChildren,
 }) => {
+  const content = useEditorContent(story.vision || story.description, theme);
   const getTypeIcon = () => {
     switch (story.type) {
       case "theme":
@@ -66,14 +68,13 @@ export const StoryCard: React.FC<StoryCardProps> = ({
         {story.title || "Untitled"}
       </h3>
 
-      <p
+      <div
+        dangerouslySetInnerHTML={{ __html: content }}
         className={cn(
           "text-sm mb-3 min-h-12",
           theme === "dark" ? "text-slate-300" : "text-gray-600",
         )}
-      >
-        {story.vision || story.description}
-      </p>
+      />
       <div className="flex items-center justify-between mt-4">
         <div className="flex items-center space-x-2">
           {story.labels.map((label) => (
