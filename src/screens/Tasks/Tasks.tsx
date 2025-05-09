@@ -62,9 +62,8 @@ export const Tasks: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { filterTasks } = useFilterStore();
   const { lists, setLists } = useLists();
-  const { stories, setStories } = useStories();
+  const { stories } = useStories("todo");
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
   // Theme Management

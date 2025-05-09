@@ -19,6 +19,7 @@ interface EditablePropertyProps {
   alwaysShowChevron?: boolean;
   showFunnelIcon?: boolean;
   disabled?: boolean;
+  placeholder?: string;
 }
 
 export const EditableProperty: React.FC<EditablePropertyProps> = ({
@@ -31,6 +32,7 @@ export const EditableProperty: React.FC<EditablePropertyProps> = ({
   alwaysShowChevron = false,
   showFunnelIcon = false,
   disabled = false,
+  placeholder = "",
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -161,7 +163,7 @@ export const EditableProperty: React.FC<EditablePropertyProps> = ({
                 }
               }}
             >
-              {getDisplayLabel(value)}
+              {getDisplayLabel(value) || placeholder}
             </span>
           )}
           {!disabled &&

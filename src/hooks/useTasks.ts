@@ -102,7 +102,7 @@ export const useTasks = ({ lists }: UseTasksProps): UseTasksReturn => {
   }, []);
 
   const tasksByList = tasks.reduce((acc, task) => {
-    const list = lists.find((l) => l.id === task.listId);
+    const list = lists.find((l) => l.id === task.list_id);
     if (!list) return acc;
 
     if (!acc[list.id]) {
@@ -139,7 +139,7 @@ export const useTasks = ({ lists }: UseTasksProps): UseTasksReturn => {
     if (editingTaskId !== task.id) {
       setSelectedTask(task);
       setEditingTaskId(null);
-      setActiveList(task.listId || null);
+      setActiveList(task.list_id || null);
     }
   };
 
@@ -152,7 +152,7 @@ export const useTasks = ({ lists }: UseTasksProps): UseTasksReturn => {
           description: updatedTask.description,
           timestage: updatedTask.timeStage,
           stage_entry_date: updatedTask.stageEntryDate,
-          list_id: updatedTask.listId,
+          list_id: updatedTask.list_id,
           priority: updatedTask.priority,
           energy: updatedTask.energy,
           location: updatedTask.location,

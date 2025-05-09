@@ -50,7 +50,7 @@ export const StoryCard: React.FC<StoryCardProps> = ({
   return (
     <div
       className={cn(
-        "p-4 rounded-lg border transition-all duration-200 cursor-pointer group",
+        "p-4 rounded-lg border transition-all duration-200 cursor-pointer group flex flex-col",
         "hover:shadow-lg hover:scale-[1.02]",
         theme === "dark"
           ? "bg-slate-800 border-slate-700 hover:border-slate-600"
@@ -71,7 +71,7 @@ export const StoryCard: React.FC<StoryCardProps> = ({
       <div
         dangerouslySetInnerHTML={{ __html: content }}
         className={cn(
-          "text-sm mb-3 min-h-12",
+          "text-sm mb-3 line-clamp-4 flex-1",
           theme === "dark" ? "text-slate-300" : "text-gray-600",
         )}
       />
