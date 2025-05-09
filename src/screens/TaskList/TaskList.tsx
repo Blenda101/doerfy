@@ -5,25 +5,28 @@ import { ListHeader } from "../../components/ListHeader";
 import { InlineTaskEditor } from "../../components/InlineTaskEditor";
 import { cn } from "../../lib/utils";
 import { Theme } from "../../utils/theme";
-import { List, useTasks } from "../../hooks/useTasks";
+import { useTasks } from "../../hooks/useTasks";
+import { List } from "../../hooks/useLists";
 import { AddListDialog } from "../../components/AddListDialog";
 
 interface TaskListProps {
   theme?: Theme;
   isAddListOpen: boolean;
   setIsAddListOpen: (open: boolean) => void;
+  lists: List[];
+  setLists: (lists: List[]) => void;
 }
 
 export const TaskList: React.FC<TaskListProps> = ({
   theme = "light",
   isAddListOpen,
   setIsAddListOpen,
+  lists,
+  setLists,
 }) => {
   const {
     isLoading,
     error,
-    lists,
-    setLists,
     selectedTask,
     editingTaskId,
     newTaskList,
@@ -41,7 +44,7 @@ export const TaskList: React.FC<TaskListProps> = ({
     handleNewTask,
     handleTaskTitleUpdate,
     handleDeleteTask,
-  } = useTasks();
+  } = useTasks({ lists });
 
   if (isLoading) {
     return (
@@ -133,7 +136,7 @@ export const TaskList: React.FC<TaskListProps> = ({
         </div>
       </div>
 
-      {selectedTask && (
+      {/* {selectedTask && (
         <div
           className={cn(
             "border-l",
@@ -150,7 +153,7 @@ export const TaskList: React.FC<TaskListProps> = ({
             availableLists={lists.map((list) => list.name)}
           />
         </div>
-      )}
+      )} */}
 
       {/* Add List Dialog */}
       <AddListDialog

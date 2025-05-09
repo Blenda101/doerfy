@@ -3,19 +3,15 @@ import { supabase } from "../utils/supabaseClient";
 import { Task } from "../types/task";
 import { toast } from "react-hot-toast";
 import { createNewTask } from "../utils/taskUtils";
+import { List } from "./useLists";
 
-export interface List {
-  id: string;
-  name: string;
-  description: string;
-  icon: string;
-  color: string;
+interface UseTasksProps {
+  lists: List[];
 }
 
 interface UseTasksReturn {
   isLoading: boolean;
   error: string | null;
-  lists: List[];
   tasks: Task[];
   selectedTask: Task | null;
   editingTaskId: string | null;
@@ -29,7 +25,6 @@ interface UseTasksReturn {
   setNewTaskList: (id: string | null) => void;
   setNewTaskTitle: (title: string) => void;
   setActiveList: (id: string | null) => void;
-  setLists: (lists: List[]) => void;
   handleTaskComplete: (taskId: string) => Promise<void>;
   handleTaskSelect: (task: Task) => void;
   handleTaskUpdate: (updatedTask: Task) => Promise<void>;
@@ -39,10 +34,9 @@ interface UseTasksReturn {
   handleDeleteTask: (taskId: string) => Promise<void>;
 }
 
-export const useTasks = (): UseTasksReturn => {
+export const useTasks = ({ lists }: UseTasksProps): UseTasksReturn => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [lists, setLists] = useState<List[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
@@ -52,7 +46,7 @@ export const useTasks = (): UseTasksReturn => {
   const [newTaskId, setNewTaskId] = useState<string | null>(null);
 
   useEffect(() => {
-    const loadData = async () => {
+    const loadTasks = async () => {
       try {
         setIsLoading(true);
         setError(null);
@@ -64,16 +58,6 @@ export const useTasks = (): UseTasksReturn => {
         if (userError || !user) {
           throw new Error("No authenticated user found");
         }
-
-        // Load lists
-        const { data: listsData, error: listsError } = await supabase
-          .from("lists")
-          .select("*")
-          .eq("owner_id", user.id)
-          .order("created_at", { ascending: false });
-
-        if (listsError) throw listsError;
-        setLists(listsData || []);
 
         // Load tasks
         const { data: tasksData, error: tasksError } = await supabase
@@ -106,15 +90,15 @@ export const useTasks = (): UseTasksReturn => {
 
         setTasks(transformedTasks);
       } catch (error) {
-        console.error("Error loading data:", error);
-        setError("Failed to load data");
-        toast.error("Failed to load data");
+        console.error("Error loading tasks:", error);
+        setError("Failed to load tasks");
+        toast.error("Failed to load tasks");
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadData();
+    loadTasks();
   }, []);
 
   const tasksByList = tasks.reduce((acc, task) => {
@@ -279,7 +263,6 @@ export const useTasks = (): UseTasksReturn => {
   return {
     isLoading,
     error,
-    lists,
     tasks,
     selectedTask,
     editingTaskId,
@@ -288,7 +271,6 @@ export const useTasks = (): UseTasksReturn => {
     activeList,
     newTaskId,
     tasksByList,
-    setLists,
     setSelectedTask,
     setEditingTaskId,
     setNewTaskList,

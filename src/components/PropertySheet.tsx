@@ -24,13 +24,16 @@ import {
 } from "lucide-react";
 import { Sheet } from "./Sheet";
 import { Editor } from "./forms/Editor";
+import { List } from "../hooks/useLists";
+import { Story } from "../types/story";
 
 interface PropertySheetProps {
   task: Task;
   onClose: () => void;
   onTaskUpdate: (updatedTask: Task) => void;
   theme?: Theme;
-  availableLists: string[];
+  lists: List[];
+  stories: Story[];
 }
 
 export const PropertySheet: React.FC<PropertySheetProps> = ({
@@ -38,7 +41,8 @@ export const PropertySheet: React.FC<PropertySheetProps> = ({
   onClose,
   onTaskUpdate,
   theme = "light",
-  availableLists = [],
+  lists = [],
+  stories = [],
 }) => {
   const [isSchedulerOpen, setIsSchedulerOpen] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -115,6 +119,8 @@ export const PropertySheet: React.FC<PropertySheetProps> = ({
       <MoreHorizontalIcon className="h-5 w-5" />
     </Button>
   );
+
+  console.log(task);
 
   return (
     <Sheet
@@ -320,10 +326,13 @@ export const PropertySheet: React.FC<PropertySheetProps> = ({
 
               <EditableProperty
                 label="List"
-                value={task.listId || ""}
-                options={availableLists}
-                onChange={(value) => handleTaskUpdate({ listId: value })}
-                disabled={availableLists.length === 0}
+                value={task.list_id || "None"}
+                options={lists.map((list) => ({
+                  value: list.id,
+                  label: list.name,
+                }))}
+                onChange={(value) => handleTaskUpdate({ list_id: value })}
+                disabled={lists.length === 0}
               />
 
               <EditableProperty
@@ -366,7 +375,10 @@ export const PropertySheet: React.FC<PropertySheetProps> = ({
               <EditableProperty
                 label="Story"
                 value={task.story || "None"}
-                options={["Brazil Vacation", "Home Renovation", "Career Goals"]}
+                options={stories.map((story) => ({
+                  value: story.id,
+                  label: story.title,
+                }))}
                 onChange={(value) => handleTaskUpdate({ story: value })}
               />
             </div>

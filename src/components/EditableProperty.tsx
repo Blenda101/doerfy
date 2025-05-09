@@ -1,12 +1,19 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { ChevronDownIcon, Filter } from 'lucide-react';
-import { cn } from '../lib/utils';
+import React, { useState, useRef, useEffect } from "react";
+import { ChevronDownIcon, Filter } from "lucide-react";
+import { cn } from "../lib/utils";
+
+export type TOption =
+  | {
+      value: string;
+      label: React.JSX.Element | string;
+    }[]
+  | string[];
 
 interface EditablePropertyProps {
   label: string;
   value: string;
   icon?: React.ReactNode;
-  options?: string[];
+  options?: TOption;
   onChange: (value: string) => void;
   className?: string;
   alwaysShowChevron?: boolean;
@@ -20,7 +27,7 @@ export const EditableProperty: React.FC<EditablePropertyProps> = ({
   icon,
   options = [],
   onChange,
-  className = '',
+  className = "",
   alwaysShowChevron = false,
   showFunnelIcon = false,
   disabled = false,
@@ -45,14 +52,17 @@ export const EditableProperty: React.FC<EditablePropertyProps> = ({
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
@@ -64,9 +74,9 @@ export const EditableProperty: React.FC<EditablePropertyProps> = ({
 
   const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     e.stopPropagation();
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       handleSelect(editValue);
-    } else if (e.key === 'Escape') {
+    } else if (e.key === "Escape") {
       setEditValue(value);
       setIsEditing(false);
     }
@@ -86,17 +96,37 @@ export const EditableProperty: React.FC<EditablePropertyProps> = ({
     }
   };
 
+  const getDisplayLabel = (val: string): React.ReactNode => {
+    if (options.length === 0) return val;
+
+    if (typeof options[0] === "string") {
+      return val;
+    }
+
+    const option = (
+      options as { value: string; label: React.ReactNode }[]
+    ).find((opt) => opt.value === val);
+
+    return option ? option.label : val;
+  };
+
   return (
     <div className="relative" ref={dropdownRef}>
-      {label && <h4 className="font-medium text-base mb-2 dark:text-slate-200">{label}</h4>}
+      {label && (
+        <h4 className="font-medium text-base mb-2 dark:text-slate-200">
+          {label}
+        </h4>
+      )}
       <div className="inline-block">
         <div
           className={cn(
             "flex items-center rounded p-2 transition-colors duration-200",
             !disabled && "cursor-pointer",
-            (isHovered || isOpen || isEditing) && !disabled && "bg-[#f5f5f5] dark:bg-slate-700",
+            (isHovered || isOpen || isEditing) &&
+              !disabled &&
+              "bg-[#f5f5f5] dark:bg-slate-700",
             disabled && "opacity-50 cursor-not-allowed",
-            className
+            className,
           )}
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => !isOpen && !isEditing && setIsHovered(false)}
@@ -116,12 +146,12 @@ export const EditableProperty: React.FC<EditablePropertyProps> = ({
               onBlur={handleInputBlur}
               className={cn(
                 "text-base bg-transparent border-none focus:outline-none",
-                "text-[#514f4f] dark:text-slate-200"
+                "text-[#514f4f] dark:text-slate-200",
               )}
               onClick={(e) => e.stopPropagation()}
             />
           ) : (
-            <span 
+            <span
               className="text-[#514f4f] dark:text-slate-200 text-base"
               onDoubleClick={(e) => {
                 e.stopPropagation();
@@ -131,37 +161,48 @@ export const EditableProperty: React.FC<EditablePropertyProps> = ({
                 }
               }}
             >
-              {value}
+              {getDisplayLabel(value)}
             </span>
           )}
-          {!disabled && (isHovered || isOpen || alwaysShowChevron) && !isEditing && (
-            <ChevronDownIcon className="text-[#6f6f6f] dark:text-slate-400 text-lg ml-2 mr-1" />
-          )}
+          {!disabled &&
+            (isHovered || isOpen || alwaysShowChevron) &&
+            !isEditing && (
+              <ChevronDownIcon className="text-[#6f6f6f] dark:text-slate-400 text-lg ml-2 mr-1" />
+            )}
         </div>
       </div>
 
       {isOpen && options.length > 0 && !disabled && (
-        <div className={cn(
-          "absolute z-50 mt-1 w-full rounded-md shadow-lg",
-          "bg-white dark:bg-slate-800",
-          "border border-gray-200 dark:border-slate-600"
-        )}>
-          {options.map((option) => (
-            <div
-              key={option}
-              className={cn(
-                "px-4 py-2 cursor-pointer",
-                "hover:bg-[#f5f5f5] dark:hover:bg-slate-700",
-                "text-[#514f4f] dark:text-slate-200"
-              )}
-              onClick={(e) => {
-                e.stopPropagation();
-                handleSelect(option);
-              }}
-            >
-              {option}
-            </div>
-          ))}
+        <div
+          className={cn(
+            "absolute z-50 mt-1 w-full rounded-md shadow-lg",
+            "bg-white dark:bg-slate-800",
+            "border border-gray-200 dark:border-slate-600",
+          )}
+        >
+          {options.map((option) => {
+            const optionValue =
+              typeof option === "string" ? option : option.value;
+            const optionLabel =
+              typeof option === "string" ? option : option.label;
+
+            return (
+              <div
+                key={optionValue}
+                className={cn(
+                  "px-4 py-2 cursor-pointer",
+                  "hover:bg-[#f5f5f5] dark:hover:bg-slate-700",
+                  "text-[#514f4f] dark:text-slate-200",
+                )}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleSelect(optionValue);
+                }}
+              >
+                {optionLabel}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

@@ -26,6 +26,8 @@ import { Filter, ListIcon, CalendarIcon } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { Task } from "../../types/task";
 import ToggleButton from "../../components/ui/toggle";
+import { useLists } from "../../hooks/useLists";
+import useStories from "../../hooks/useStories";
 
 // Constants for local storage keys
 const STORAGE_KEYS = {
@@ -61,7 +63,8 @@ export const Tasks: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { filterTasks } = useFilterStore();
-
+  const { lists, setLists } = useLists();
+  const { stories, setStories } = useStories();
   // Theme Management
   useEffect(() => {
     setThemeUtil(theme);
@@ -177,7 +180,7 @@ export const Tasks: React.FC = () => {
           timestage: updatedTask.timeStage,
           stage_entry_date: updatedTask.stageEntryDate,
           assignee: updatedTask.assignee,
-          list_id: updatedTask.listId,
+          list_id: updatedTask.list_id,
           priority: updatedTask.priority,
           energy: updatedTask.energy,
           location: updatedTask.location,
@@ -265,7 +268,7 @@ export const Tasks: React.FC = () => {
   // Filter tasks based on active tab
   const filteredTasks = filterTasks(tasks, activeTab);
   const selectedTask = tasks.find((t) => t.id === selectedTaskId);
-
+  console.log(stories);
   // Render Component
   return (
     <div
@@ -354,6 +357,8 @@ export const Tasks: React.FC = () => {
                     theme={theme}
                     isAddListOpen={isAddListOpen}
                     setIsAddListOpen={setIsAddListOpen}
+                    lists={lists}
+                    setLists={setLists}
                   />
                 </TabsContent>
                 <TabsContent value="calendar" className="flex-1 m-0">
@@ -395,9 +400,8 @@ export const Tasks: React.FC = () => {
                 onClose={handlePanelClose}
                 onTaskUpdate={handleTaskUpdate}
                 theme={theme}
-                availableLists={
-                  Array.from(new Set(tasks.map((t) => t.listId))) as any
-                }
+                lists={lists}
+                stories={stories}
               />
             </div>
           )}
