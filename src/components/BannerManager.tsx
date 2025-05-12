@@ -143,7 +143,9 @@ export const BannerManager: React.FC<BannerManagerProps> = ({
       return;
     }
 
+    //@ts-ignore
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    //@ts-ignore
     const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
     if (!supabaseUrl) {
