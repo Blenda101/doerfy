@@ -57,6 +57,14 @@ ChartJS.register(
   Legend,
 );
 
+// Supported audio formats
+const SUPPORTED_AUDIO_FORMATS = ['.mp3', '.wav', '.ogg', '.m4a'];
+
+const isAudioFormatSupported = (url: string): boolean => {
+  const extension = url.toLowerCase().substring(url.lastIndexOf('.'));
+  return SUPPORTED_AUDIO_FORMATS.includes(extension);
+};
+
 export const Home: React.FC = () => {
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
   const [theme, setTheme] = useState<Theme>(getInitialTheme);
@@ -209,9 +217,20 @@ export const Home: React.FC = () => {
     // Only initialize audio if we have valid audio sources
     if (
       bannerConfig?.audio?.length &&
-      currentAudioIndex < bannerConfig.audio.length &&
-      bannerConfig.audio[currentAudioIndex]?.url
+      currentAudioIndex < bannerConfig.audio.length
     ) {
+      const audioUrl = bannerConfig.audio[currentAudioIndex]?.url;
+      
+      if (!audioUrl) {
+        setAudioError("Invalid audio source");
+        return cleanup;
+      }
+
+      if (!isAudioFormatSupported(audioUrl)) {
+        setAudioError(`Unsupported audio format. Please use: ${SUPPORTED_AUDIO_FORMATS.join(', ')}`);
+        return cleanup;
+      }
+
       const audio = new Audio();
       audioRef.current = audio;
 
@@ -220,8 +239,11 @@ export const Home: React.FC = () => {
       audio.addEventListener("ended", handleAudioEnded);
 
       // Set up audio source and configuration
-      audio.src = bannerConfig.audio[currentAudioIndex].url;
+      audio.src = audioUrl;
       audio.volume = (bannerConfig.volume ?? 50) / 100;
+
+      // Preload audio to check if it's playable
+      audio.load();
 
       // Reset playing state
       setIsPlaying(false);
@@ -250,7 +272,7 @@ export const Home: React.FC = () => {
           errorMessage = "Audio format not supported";
           break;
         case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
-          errorMessage = "Audio source not supported";
+          errorMessage = "Audio source not supported. Please check the file format.";
           break;
       }
     }
@@ -262,12 +284,23 @@ export const Home: React.FC = () => {
 
   const handleAudioEnded = () => {
     if (bannerConfig?.audio?.length) {
-      const nextIndex = (currentAudioIndex + 1) % bannerConfig.audio.length;
-      setCurrentAudioIndex(nextIndex);
+      // Find next supported audio
+      let nextIndex = (currentAudioIndex + 1) % bannerConfig.audio.length;
+      let attempts = bannerConfig.audio.length;
 
-      // Only auto-play next track if we were playing
-      if (isPlaying) {
-        setIsPlaying(true);
+      while (attempts > 0 && !isAudioFormatSupported(bannerConfig.audio[nextIndex]?.url || '')) {
+        nextIndex = (nextIndex + 1) % bannerConfig.audio.length;
+        attempts--;
+      }
+
+      if (attempts > 0) {
+        setCurrentAudioIndex(nextIndex);
+        // Only auto-play next track if we were playing
+        if (isPlaying) {
+          setIsPlaying(true);
+        }
+      } else {
+        setAudioError("No supported audio formats found");
       }
     }
   };
@@ -284,12 +317,20 @@ export const Home: React.FC = () => {
         setIsPlaying(false);
       } else {
         setAudioError(null); // Reset error state before attempting to play
+        
+        // Check if the current audio format is supported
+        const currentAudio = bannerConfig.audio[currentAudioIndex];
+        if (!currentAudio?.url || !isAudioFormatSupported(currentAudio.url)) {
+          setAudioError(`Unsupported audio format. Please use: ${SUPPORTED_AUDIO_FORMATS.join(', ')}`);
+          return;
+        }
+
         await audioRef.current.play();
         setIsPlaying(true);
       }
     } catch (error) {
       console.error("Error playing audio:", error);
-      setAudioError("Failed to play audio");
+      setAudioError("Failed to play audio. Please check the file format and try again.");
       setIsPlaying(false);
     }
   };
