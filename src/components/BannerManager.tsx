@@ -12,7 +12,9 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Switch } from "./ui/switch";
 import { Slider } from "./ui/slider";
-import { cn } from "../lib/utils";
+import { LabelEditor } from "./LabelEditor";
+import { Note, Notebook, NoteWithAuthor } from "../types/note";
+import { Theme } from "../utils/theme";
 import {
   Image as ImageIcon,
   Music2,
@@ -20,7 +22,7 @@ import {
   Search,
   Loader2,
   Camera,
-  Save,
+  Quote,
 } from "lucide-react";
 import { getCurrentUser, supabase } from "../utils/supabaseClient";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
@@ -34,6 +36,7 @@ import {
   SelectValue,
 } from "./ui/select";
 import { Badge } from "./ui/badge";
+import { cn } from "../lib/utils";
 
 const imageCategories = [
   {
@@ -58,17 +61,43 @@ const imageCategories = [
   }
 ];
 
+const quoteCategories = [
+  {
+    name: "Inspiration",
+    tags: ["inspiration", "motivation", "success", "dreams", "goals"],
+  },
+  {
+    name: "Life & Wisdom",
+    tags: ["life", "wisdom", "philosophy", "truth", "knowledge"],
+  },
+  {
+    name: "Love & Relationships",
+    tags: ["love", "relationships", "friendship", "family", "romance"],
+  },
+  {
+    name: "Personal Growth",
+    tags: ["growth", "self-improvement", "learning", "change", "development"],
+  },
+  {
+    name: "Leadership",
+    tags: ["leadership", "management", "teamwork", "vision", "strategy"],
+  },
+];
+
+interface AudioItem {
+  url: string;
+  name: string;
+  order: number;
+  source?: 'upload' | 'apple_music' | 'spotify';
+}
+
 export interface BannerConfig {
   images: {
     url: string;
     order: number;
   }[];
   transitionTime: number;
-  audio: {
-    url: string;
-    name: string;
-    order: number;
-  }[];
+  audio: AudioItem[];
   autoplay: boolean;
   volume: number;
   quotes: {
@@ -92,6 +121,13 @@ interface SearchResult {
   width: number;
   height: number;
   photographer: string;
+}
+
+interface QuoteSearchResult {
+  id: string;
+  content: string;
+  author: string;
+  tags: string[];
 }
 
 interface BannerManagerProps {
@@ -128,14 +164,22 @@ export const BannerManager: React.FC<BannerManagerProps> = ({
   );
 
   const [imageSource, setImageSource] = useState<"upload" | "pixabay" | "unsplash">("upload");
+  const [quoteSource, setQuoteSource] = useState<"custom" | "quotable" | "zenquotes">("custom");
   const [searchQuery, setSearchQuery] = useState("");
+  const [quoteSearchQuery, setQuoteSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [quoteSearchResults, setQuoteSearchResults] = useState<QuoteSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [isQuoteSearching, setIsQuoteSearching] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [selectedQuoteCategory, setSelectedQuoteCategory] = useState<string>("");
   const [appendSearch, setAppendSearch] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [newQuote, setNewQuote] = useState({ text: "", author: "" });
+  const [audioSource, setAudioSource] = useState<"upload" | "apple_music" | "spotify">("upload");
+  const [audioLink, setAudioLink] = useState("");
 
   const handleSearch = async (page = 1) => {
     if (!searchQuery.trim()) {
@@ -143,9 +187,7 @@ export const BannerManager: React.FC<BannerManagerProps> = ({
       return;
     }
 
-    //@ts-ignore
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    //@ts-ignore
     const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
     if (!supabaseUrl) {
@@ -217,6 +259,61 @@ export const BannerManager: React.FC<BannerManagerProps> = ({
     }
   };
 
+  const handleQuoteSearch = async () => {
+    if (!quoteSearchQuery.trim()) {
+      toast.error("Please enter a search term");
+      return;
+    }
+
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+    if (!supabaseUrl) {
+      toast.error("VITE_SUPABASE_URL is not configured");
+      return;
+    }
+
+    if (!supabaseAnonKey) {
+      toast.error("VITE_SUPABASE_ANON_KEY is not configured");
+      return;
+    }
+
+    setIsQuoteSearching(true);
+
+    try {
+      const response = await fetch(
+        `${supabaseUrl}/functions/v1/quote-search`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${supabaseAnonKey}`,
+          },
+          body: JSON.stringify({
+            source: quoteSource,
+            query: quoteSearchQuery.trim(),
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to search quotes: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      if (!data || !data.results) {
+        throw new Error("Invalid response format from quote search");
+      }
+
+      setQuoteSearchResults(data.results);
+    } catch (error) {
+      console.error("Error searching quotes:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to search quotes");
+    } finally {
+      setIsQuoteSearching(false);
+    }
+  };
+
   const loadMore = () => {
     if (!isLoadingMore && hasMore) {
       handleSearch(currentPage + 1);
@@ -225,6 +322,10 @@ export const BannerManager: React.FC<BannerManagerProps> = ({
 
   const handleCategoryChange = (value: string) => {
     setSelectedCategory(value);
+  };
+
+  const handleQuoteCategoryChange = (value: string) => {
+    setSelectedQuoteCategory(value);
   };
 
   const handleTagClick = (tag: string) => {
@@ -238,6 +339,20 @@ export const BannerManager: React.FC<BannerManagerProps> = ({
       });
     } else {
       setSearchQuery(tag);
+    }
+  };
+
+  const handleQuoteTagClick = (tag: string) => {
+    if (appendSearch) {
+      setQuoteSearchQuery((prev) => {
+        const terms = prev.split(' ').filter(term => term.trim());
+        if (!terms.includes(tag)) {
+          return [...terms, tag].join(' ');
+        }
+        return prev;
+      });
+    } else {
+      setQuoteSearchQuery(tag);
     }
   };
 
@@ -324,17 +439,40 @@ export const BannerManager: React.FC<BannerManagerProps> = ({
     });
 
   const handleQuoteAdd = () => {
+    if (!newQuote.text.trim() || !newQuote.author.trim()) {
+      toast.error("Please enter both quote text and author");
+      return;
+    }
+
     setConfig((prev) => ({
       ...prev,
       quotes: [
         ...prev.quotes,
         {
-          text: "",
-          author: "",
+          text: newQuote.text.trim(),
+          author: newQuote.author.trim(),
           order: prev.quotes.length,
         },
       ],
     }));
+
+    setNewQuote({ text: "", author: "" });
+    toast.success("Quote added successfully");
+  };
+
+  const handleQuoteSelect = (quote: QuoteSearchResult) => {
+    setConfig((prev) => ({
+      ...prev,
+      quotes: [
+        ...prev.quotes,
+        {
+          text: quote.content,
+          author: quote.author,
+          order: prev.quotes.length,
+        },
+      ],
+    }));
+    toast.success("Quote added to banner");
   };
 
   const handleQuoteRemove = (index: number) => {
@@ -342,6 +480,7 @@ export const BannerManager: React.FC<BannerManagerProps> = ({
       ...prev,
       quotes: prev.quotes.filter((_, i) => i !== index),
     }));
+    toast.success("Quote removed successfully");
   };
 
   const handleQuoteUpdate = (
@@ -355,6 +494,32 @@ export const BannerManager: React.FC<BannerManagerProps> = ({
         i === index ? { ...quote, [field]: value } : quote,
       ),
     }));
+  };
+
+  const handleAudioLinkAdd = () => {
+    if (!audioLink.trim()) {
+      toast.error("Please enter a valid audio link");
+      return;
+    }
+
+    const source = audioSource === "apple_music" ? "apple_music" : "spotify";
+    const name = `${source} Track`;
+
+    setConfig((prev) => ({
+      ...prev,
+      audio: [
+        ...prev.audio,
+        {
+          url: audioLink.trim(),
+          name,
+          order: prev.audio.length,
+          source,
+        },
+      ],
+    }));
+
+    setAudioLink("");
+    toast.success("Audio link added successfully");
   };
 
   const handleSave = () => {
@@ -686,34 +851,81 @@ export const BannerManager: React.FC<BannerManagerProps> = ({
                 >
                   Audio Playlist
                 </h3>
-                <div
-                  {...getAudioRootProps()}
-                  className={cn(
-                    "border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors",
-                    theme === "dark"
-                      ? "border-slate-600 hover:border-slate-500"
-                      : "border-gray-300 hover:border-gray-400",
-                  )}
+
+                <RadioGroup
+                  value={audioSource}
+                  onValueChange={(value) => setAudioSource(value as "upload" | "apple_music" | "spotify")}
+                  className="flex space-x-4 mb-4"
                 >
-                  <input {...getAudioInputProps()} />
-                  <Music2 className="mx-auto h-12 w-12 text-gray-400" />
-                  <p
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="upload" id="upload" />
+                    <Label htmlFor="upload">Upload</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="apple_music" id="apple_music" />
+                    <Label htmlFor="apple_music">Apple Music</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="spotify" id="spotify" />
+                    <Label htmlFor="spotify">Spotify</Label>
+                  </div>
+                </RadioGroup>
+
+                {audioSource === "upload" ? (
+                  <div
+                    {...getAudioRootProps()}
                     className={cn(
-                      "mt-2",
-                      theme === "dark" ? "text-slate-300" : "text-gray-600",
+                      "border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors",
+                      theme === "dark"
+                        ? "border-slate-600 hover:border-slate-500"
+                        : "border-gray-300 hover:border-gray-400",
                     )}
                   >
-                    Drag & drop audio files here, or click to select
-                  </p>
-                  <p
-                    className={cn(
-                      "text-sm mt-1",
-                      theme === "dark" ? "text-slate-400" : "text-gray-500",
-                    )}
-                  >
-                    Supported formats: MP3, WAV (max 10MB)
-                  </p>
-                </div>
+                    <input {...getAudioInputProps()} />
+                    <Music2 className="mx-auto h-12 w-12 text-gray-400" />
+                    <p
+                      className={cn(
+                        "mt-2",
+                        theme === "dark" ? "text-slate-300" : "text-gray-600",
+                      )}
+                    >
+                      Drag & drop audio files here, or click to select
+                    </p>
+                    <p
+                      className={cn(
+                        "text-sm mt-1",
+                        theme === "dark" ? "text-slate-400" : "text-gray-500",
+                      )}
+                    >
+                      Supported formats: MP3, WAV (max 10MB)
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div>
+                      <Label className={theme === "dark" ? "text-white" : undefined}>
+                        {audioSource === "apple_music" ? "Apple Music Link" : "Spotify Link"}
+                      </Label>
+                      <div className="flex space-x-2">
+                        <Input
+                          value={audioLink}
+                          onChange={(e) => setAudioLink(e.target.value)}
+                          placeholder={`Enter ${audioSource === "apple_music" ? "Apple Music" : "Spotify"} link`}
+                          className={cn(
+                            theme === "dark" && "bg-slate-700 border-slate-600 text-white",
+                          )}
+                        />
+                        <Button
+                          onClick={handleAudioLinkAdd}
+                          className={theme === "dark" && "bg-purple-600 hover:bg-purple-700"}
+                        >
+                          Add
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {config.audio.length > 0 && (
                   <div className="mt-4 space-y-2">
                     {config.audio.map((audio, index) => (
@@ -739,6 +951,7 @@ export const BannerManager: React.FC<BannerManagerProps> = ({
                           className={theme === "dark" ? "text-white" : undefined}
                         >
                           {audio.name}
+                          {audio.source && ` (${audio.source.replace('_', ' ')})`}
                         </span>
                         <button
                           onClick={() => {
@@ -760,6 +973,7 @@ export const BannerManager: React.FC<BannerManagerProps> = ({
                     ))}
                   </div>
                 )}
+
                 <div className="mt-4 space-y-4">
                   <div className="flex items-center">
                     <Label className={theme === "dark" ? "text-white" : undefined}>
@@ -800,97 +1014,330 @@ export const BannerManager: React.FC<BannerManagerProps> = ({
 
             <TabsContent value="quotes">
               <div className="space-y-4">
-                <div className="flex items-center justify-between mb-4">
-                  <h3
+                <h3
+                  className={cn(
+                    "text-lg font-semibold mb-4",
+                    theme === "dark" ? "text-white" : "text-gray-900",
+                  )}
+                >
+                  Quotes
+                </h3>
+
+                <RadioGroup
+                  value={quoteSource}
+                  onValueChange={(value) => {
+                    setQuoteSource(value as "custom" | "quotable" | "zenquotes");
+                    setQuoteSearchResults([]);
+                  }}
+                  className="flex space-x-4 mb-4"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="custom" id="custom" />
+                    <Label htmlFor="custom">Custom</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="quotable" id="quotable" />
+                    <Label htmlFor="quotable">Quotable</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="zenquotes" id="zenquotes" />
+                    <Label htmlFor="zenquotes">ZenQuotes</Label>
+                  </div>
+                </RadioGroup>
+
+                {quoteSource === "custom" ? (
+                  <div className="space-y-4">
+                    <div>
+                      <Label className={theme === "dark" ? "text-white" : undefined}>
+                        Quote Text
+                      </Label>
+                      <Input
+                        value={newQuote.text}
+                        onChange={(e) =>
+                          setNewQuote((prev) => ({ ...prev, text: e.target.value }))
+                        }
+                        placeholder="Enter quote text"
+                        className={cn(
+                          theme === "dark" &&
+                            "bg-slate-700 border-slate-600 text-white",
+                        )}
+                      />
+                    </div>
+                    <div>
+                      <Label className={theme === "dark" ? "text-white" : undefined}>
+                        Author
+                      </Label>
+                      <Input
+                        value={newQuote.author}
+                        onChange={(e) =>
+                          setNewQuote((prev) => ({ ...prev, author: e.target.value }))
+                        }
+                        placeholder="Enter author name"
+                        className={cn(
+                          theme === "dark" &&
+                            "bg-slate-700 border-slate-600 text-white",
+                        )}
+                      />
+                    </div>
+                    <Button
+                      onClick={handleQuoteAdd}
+                      className={theme === "dark" && "bg-purple-600 hover:bg-purple-700"}
+                    >
+                      Add Quote
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-4">
+                      <div className="flex-1">
+                        <div className="flex space-x-2">
+                          <Input
+                            type="text"
+                            placeholder="Search quotes..."
+                            value={quoteSearchQuery}
+                            onChange={(e) => setQuoteSearchQuery(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                handleQuoteSearch();
+                              }
+                            }}
+                            className={cn(
+                              theme === "dark" &&
+                                "bg-slate-700 border-slate-600 text-white",
+                            )}
+                          />
+                          <Button
+                            onClick={() => handleQuoteSearch()}
+                            disabled={isQuoteSearching}
+                            className={cn(
+                              "min-w-[100px]",
+                              theme === "dark" &&
+                                "bg-purple-600 hover:bg-purple-700",
+                            )}
+                          >
+                            {isQuoteSearching ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Search className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+
+                        <div className="flex items-center justify-between mt-2">
+                          <Select
+                            value={selectedQuoteCategory}
+                            onValueChange={handleQuoteCategoryChange}
+                          >
+                            <SelectTrigger
+                              className={cn(
+                                "w-[200px]",
+                                theme === "dark" &&
+                                  "bg-slate-700 border-slate-600 text-white",
+                              )}
+                            >
+                              <SelectValue placeholder="Select a category" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {quoteCategories.map((category) => (
+                                <SelectItem key={category.name} value={category.name}>
+                                  {category.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+
+                          <div className="flex items-center space-x-2">
+                            <Switch
+                              checked={appendSearch}
+                              onCheckedChange={setAppendSearch}
+                            />
+                            <Label>Append tags to search</Label>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      {selectedQuoteCategory && (
+                        <div className="space-y-2">
+                          <div className="flex flex-wrap gap-2">
+                            {quoteCategories
+                              .find((cat) => cat.name === selectedQuoteCategory)
+                              ?.tags.map((tag) => (
+                                <Badge
+                                  key={tag}
+                                  variant="secondary"
+                                  className={cn(
+                                    "cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-600",
+                                    quoteSearchQuery.includes(tag) &&
+                                      "bg-purple-100 dark:bg-purple-900",
+                                  )}
+                                  onClick={() => handleQuoteTagClick(tag)}
+                                >
+                                  {tag}
+                                </Badge>
+                              ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {quoteSearchResults.length > 0 && (
+                      <div className="space-y-4">
+                        <div className="h-[400px] overflow-y-auto">
+                          {quoteSearchResults.map((quote) => (
+                            <div
+                              key={quote.id}
+                              className={cn(
+                                "p-4 rounded-lg mb-4 cursor-pointer group",
+                                "border",
+                                theme === "dark"
+                                  ? "border-slate-600 bg-slate-700"
+                                  : "border-gray-200 bg-gray-50",
+                              )}
+                              onClick={() => handleQuoteSelect(quote)}
+                            >
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <p
+                                    className={cn(
+                                      "text-sm italic mb-2",
+                                      theme === "dark"
+                                        ? "text-slate-200"
+                                        : "text-gray-700",
+                                    )}
+                                  >
+                                    "{quote.content}"
+                                  </p>
+                                  <p
+                                    className={cn(
+                                      "text-sm",
+                                      theme === "dark"
+                                        ? "text-slate-400"
+                                        : "text-gray-500",
+                                    )}
+                                  >
+                                    - {quote.author}
+                                  </p>
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className={cn(
+                                    "opacity-0 group-hover:opacity-100",
+                                    "transition-opacity duration-200",
+                                  )}
+                                >
+                                  Add
+                                </Button>
+                              </div>
+                              {quote.tags.length > 0 && (
+                                <div className="flex flex-wrap gap-2 mt-2">
+                                  {quote.tags.map((tag) => (
+                                    <Badge
+                                      key={tag}
+                                      variant="secondary"
+                                      className={theme === "dark" && "bg-slate-600"}
+                                    >
+                                      {tag}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div className="mt-6">
+                  <h4
                     className={cn(
-                      "text-lg font-semibold",
+                      "text-lg font-semibold mb-4",
                       theme === "dark" ? "text-white" : "text-gray-900",
                     )}
                   >
-                    Quotes
-                  </h3>
-                  <Button
-                    onClick={handleQuoteAdd}
-                    variant="outline"
-                    className={theme === "dark" ? "border-slate-600 text-white" : "border-slate-300 text-black"}                  >
-                    Add Quote
-                  </Button>
-                </div>
-                <div className="space-y-4">
-                  {config.quotes.map((quote, index) => (
-                    <div
-                      key={index}
-                      className={cn(
-                        "p-4 rounded-lg border",
-                        theme === "dark"
-                          ? "border-slate-600 bg-slate-700"
-                          : "border-gray-200",
-                      )}
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1 space-y-4">
-                          <div>
-                            <Label
-                              className={
-                                theme === "dark" ? "text-white" : undefined
-                              }
-                            >
-                              Quote Text
-                            </Label>
-                            <Input
-                              value={quote.text}
-                              onChange={(e) =>
-                                handleQuoteUpdate(index, "text", e.target.value)
-                              }
-                              maxLength={150}
-                              placeholder="Enter quote text..."
-                              className={cn(
-                                "mt-1",
-                                theme === "dark" &&
-                                  "bg-slate-800 border-slate-600 text-white",
-                              )}
-                            />
+                    Current Quotes
+                  </h4>
+                  <div className="space-y-4">
+                    {config.quotes.map((quote, index) => (
+                      <div
+                        key={index}
+                        className={cn(
+                          "p-4 rounded-lg border",
+                          theme === "dark"
+                            ? "border-slate-600 bg-slate-700"
+                            : "border-gray-200",
+                        )}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1 space-y-4">
+                            <div>
+                              <Label
+                                className={
+                                  theme === "dark" ? "text-white" : undefined
+                                }
+                              >
+                                Quote Text
+                              </Label>
+                              <Input
+                                value={quote.text}
+                                onChange={(e) =>
+                                  handleQuoteUpdate(index, "text", e.target.value)
+                                }
+                                maxLength={150}
+                                placeholder="Enter quote text..."
+                                className={cn(
+                                  "mt-1",
+                                  theme === "dark" &&
+                                    "bg-slate-800 border-slate-600 text-white",
+                                )}
+                              />
+                            </div>
+                            <div>
+                              <Label
+                                className={
+                                  theme === "dark" ? "text-white" : undefined
+                                }
+                              >
+                                Author
+                              </Label>
+                              <Input
+                                value={quote.author}
+                                onChange={(e) =>
+                                  handleQuoteUpdate(index, "author", e.target.value)
+                                }
+                                placeholder="Enter author name..."
+                                className={cn(
+                                  "mt-1",
+                                  theme === "dark" &&
+                                    "bg-slate-800 border-slate-600 text-white",
+                                )}
+                              />
+                            </div>
                           </div>
-                          <div>
-                            <Label
-                              className={
-                                theme === "dark" ? "text-white" : undefined
-                              }
-                            >
-                              Author
-                            </Label>
-                            <Input
-                              value={quote.author}
-                              onChange={(e) =>
-                                handleQuoteUpdate(index, "author", e.target.value)
-                              }
-                              placeholder="Enter author name..."
-                              className={cn(
-                                "mt-1",
-                                theme === "dark" &&
-                                  "bg-slate-800 border-slate-600 text-white",
-                              )}
-                            />
-                          </div>
+                          <button
+                            onClick={() => handleQuoteRemove(index)}
+                            className={cn(
+                              "ml-4 p-1 rounded-full",
+                              theme === "dark"
+                                ? "text-slate-400 hover:text-white hover:bg-slate-600"
+                                : "text-gray-400 hover:text-gray-600 hover:bg-gray-200",
+                            )}
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
                         </div>
-                        <button
-                          onClick={() => handleQuoteRemove(index)}
-                          className={cn(
-                            "ml-4 p-1 rounded-full",
-                            theme === "dark"
-                              ? "text-slate-400 hover:text-white hover:bg-slate-600"
-                              : "text-gray-400 hover:text-gray-600 hover:bg-gray-200",
-                          )}
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-                <div className="mt-4 space-y-4">
+
+                <div className="mt-6 space-y-4">
                   <div className="flex items-center">
-                    <Label className={theme === "dark" ?  "text-white" : undefined}>
+                    <Label className={theme === "dark" ? "text-white" : undefined}>
                       Enable Quote Rotation
                     </Label>
                     <Switch
@@ -919,8 +1366,7 @@ export const BannerManager: React.FC<BannerManagerProps> = ({
                         onChange={(e) =>
                           setConfig((prev) => ({
                             ...prev,
-                            quoteDuration: parseInt(e.target.value) ||
-                              10,
+                            quoteDuration: parseInt(e.target.value) || 10,
                           }))
                         }
                         className={cn(
@@ -941,13 +1387,13 @@ export const BannerManager: React.FC<BannerManagerProps> = ({
           <Button
             variant="outline"
             onClick={onClose}
-            className={theme === "dark" ? "border-slate-600 text-white" : "border-slate-300 text-black"}
+            className={theme === "dark" && "border-slate-600 text-white"}
           >
             Cancel
           </Button>
           <Button
             onClick={handleSave}
-            className={theme === "dark" ? "bg-purple-600 hover:bg-purple-700" : "bg-purple-500 text-white"}
+            className={theme === "dark" && "bg-purple-600 hover:bg-purple-700"}
           >
             Save Changes
           </Button>

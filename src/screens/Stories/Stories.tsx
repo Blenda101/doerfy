@@ -5,11 +5,12 @@ import { StoryCard } from "../../components/StoryCard";
 import { StoryTable } from "../../components/StoryTable";
 import { StoryPanel } from "../../components/StoryPanel";
 import { WriteStoriesPanel } from "../../components/WriteStoriesPanel";
+import StoriesFlow from "../../components/StoriesFlow";
 import { Theme, getInitialTheme } from "../../utils/theme";
 import { Story, StoryWithRelations } from "../../types/story";
 import { supabase } from "../../utils/supabaseClient";
 import { cn } from "../../lib/utils";
-import { BookOpen, List } from "lucide-react";
+import { BookOpen, List, Share2 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { Button } from "../../components/ui/button";
 import ToggleButton from "../../components/ui/toggle";
@@ -17,7 +18,7 @@ import ToggleButton from "../../components/ui/toggle";
 export const Stories: React.FC = () => {
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
   const [theme, setTheme] = useState<Theme>(getInitialTheme);
-  const [view, setView] = useState<"grid" | "list">("grid");
+  const [view, setView] = useState<"grid" | "flow" | "list">("grid");
   const [stories, setStories] = useState<StoryWithRelations[]>([]);
   const [selectedStory, setSelectedStory] = useState<Story | null>(null);
   const [isWriteStoriesOpen, setIsWriteStoriesOpen] = useState(false);
@@ -212,6 +213,13 @@ export const Stories: React.FC = () => {
     }
   };
 
+  const getHeaderProps = () => ({
+    title: "Stories",
+    icon: <BookOpen />,
+    onAddItem: () => setIsWriteStoriesOpen(true),
+    addItemLabel: "Write Story",
+  });
+
   return (
     <div
       className={cn(
@@ -230,11 +238,8 @@ export const Stories: React.FC = () => {
 
       <div className="flex-1 flex flex-col">
         <TasksHeader
-          title="Stories"
-          icon={<BookOpen />}
+          {...getHeaderProps()}
           theme={theme}
-          onAddItem={() => setIsWriteStoriesOpen(true)}
-          addItemLabel="Write Story"
           tabs={
             <ToggleButton
               size={24}
@@ -247,6 +252,13 @@ export const Stories: React.FC = () => {
                   ),
                 },
                 {
+                  value: "flow",
+                  label: "Flow",
+                  icon: (
+                    <Share2 className="text-theme-light dark:text-theme-dark" />
+                  ),
+                },
+                {
                   value: "list",
                   label: "List",
                   icon: (
@@ -255,7 +267,7 @@ export const Stories: React.FC = () => {
                 },
               ]}
               activeOption={view}
-              onChange={(value) => setView(value as "grid" | "list")}
+              onChange={setView as (value: string) => void}
             />
           }
         />
@@ -290,6 +302,12 @@ export const Stories: React.FC = () => {
                     />
                   ))}
                 </div>
+              ) : view === "flow" ? (
+                <StoriesFlow
+                  stories={stories}
+                  theme={theme}
+                  onStorySelect={setSelectedStory}
+                />
               ) : (
                 <StoryTable
                   stories={stories}
