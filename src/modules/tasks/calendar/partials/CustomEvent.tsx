@@ -20,9 +20,7 @@ export const CustomEvent: React.FC<{ event: CalendarEvent }> = ({ event }) => (
           : "bg-green-100 dark:bg-green-900/20",
       )}
     >
-      {event.title} Lorem ipsum dolor sit amet consectetur adipisicing elit.
-      Sint in, obcaecati cum culpa eius necessitatibus quasi tempore. Provident,
-      reiciendis at.
+      {event.title}
     </div>
   </TaskHoverCard>
 );

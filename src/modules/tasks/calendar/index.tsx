@@ -104,6 +104,7 @@ export const Calendar: React.FC<CalendarProps> = ({
     return <div>Error: {error.message}</div>;
   }
 
+  console.log({ events, tasks });
   return (
     <div className="flex-1 p-6">
       <BigCalendar<CalendarEvent>
@@ -130,6 +131,7 @@ export const Calendar: React.FC<CalendarProps> = ({
           dateCellWrapper: (props) => (
             <DayCell
               {...props}
+              createTask={createTask}
               onAddTask={handleAddTask}
               newTask={newTask}
               onNewTaskChange={setNewTask}

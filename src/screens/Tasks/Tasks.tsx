@@ -12,7 +12,7 @@ import { FilterPanel } from "../../components/FilterPanel";
 import { PropertySheet } from "../../components/PropertySheet";
 import { PtbTimeBox } from "../PtbTimeBox/PtbTimeBox";
 import { TaskList } from "../TaskList/TaskList";
-import { Calendar } from "../Calendar/Calendar";
+import { Calendar } from "../../modules/tasks/calendar";
 import { AddListDialog } from "../../components/AddListDialog";
 import {
   Theme,

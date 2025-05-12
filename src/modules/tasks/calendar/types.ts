@@ -24,7 +24,7 @@ export interface CalendarEvent {
 // State for creating new tasks
 export interface NewTaskState {
   date: Date | null;
-  isEditing: boolean;
+  isEditing?: boolean;
   title: string;
 }
 
@@ -55,6 +55,7 @@ export interface ToolbarProps {
 export interface DayCellProps {
   value: Date;
   children?: React.ReactNode;
+  createTask: (title: string, date: Date) => Promise<Task>;
   onAddTask: (date: Date) => void;
   newTask: NewTaskState;
   onNewTaskChange: (task: NewTaskState) => void;
