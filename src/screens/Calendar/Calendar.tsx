@@ -3,13 +3,16 @@ import {
   Calendar as BigCalendar,
   dateFnsLocalizer,
   Views,
+  View,
+  Event,
+  CalendarProps as BigCalendarProps,
 } from "react-big-calendar";
 import { format, parse, startOfWeek, getDay } from "date-fns";
 import { enUS } from "date-fns/locale";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { TaskHoverCard } from "../../components/TaskHoverCard";
-import { Task } from "../../types/task";
+import { Task, TaskSchedule } from "../../types/task";
 import { loadTasks, saveTasks } from "../../utils/storage";
 import { cn } from "../../lib/utils";
 import { Theme } from "../../utils/theme";
@@ -22,18 +25,6 @@ interface CalendarProps {
   theme?: Theme;
   onTaskSelect: (task: Task) => void;
 }
-
-const locales = {
-  "en-US": enUS,
-};
-
-const localizer = dateFnsLocalizer({
-  format,
-  parse,
-  startOfWeek,
-  getDay,
-  locales,
-});
 
 interface CalendarEvent {
   id: string;
@@ -49,14 +40,223 @@ interface NewTaskState {
   title: string;
 }
 
+interface EventDropArgs {
+  event: CalendarEvent;
+  start: Date;
+  end: Date;
+}
+
+type ExtendedCalendarProps = Omit<
+  BigCalendarProps<CalendarEvent>,
+  "onEventDrop"
+> & {
+  onEventDrop?: (args: EventDropArgs) => void;
+};
+
+const locales = {
+  "en-US": enUS,
+};
+
+const localizer = dateFnsLocalizer({
+  format,
+  parse,
+  startOfWeek,
+  getDay,
+  locales,
+});
+
+const CustomEvent: React.FC<{ event: CalendarEvent }> = ({ event }) => (
+  <TaskHoverCard task={event.task}>
+    <div
+      className={cn(
+        "truncate px-2 py-1 text-sm rounded cursor-pointer",
+        event.task.priority === "high"
+          ? "bg-red-100 dark:bg-red-900/20"
+          : event.task.priority === "medium"
+          ? "bg-yellow-100 dark:bg-yellow-900/20"
+          : "bg-green-100 dark:bg-green-900/20",
+      )}
+    >
+      {event.title}
+    </div>
+  </TaskHoverCard>
+);
+
+interface ToolbarProps {
+  toolbar: any;
+  view: View;
+  onViewChange: (view: View) => void;
+  theme: Theme;
+}
+
+const CustomToolbar: React.FC<ToolbarProps> = ({
+  toolbar,
+  view,
+  onViewChange,
+  theme,
+}) => {
+  const goToToday = () => {
+    toolbar.onNavigate("TODAY");
+  };
+
+  return (
+    <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center space-x-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => toolbar.onNavigate("PREV")}
+        >
+          Previous
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => toolbar.onNavigate("NEXT")}
+        >
+          Next
+        </Button>
+        <Button variant="outline" size="sm" onClick={goToToday}>
+          Today
+        </Button>
+      </div>
+      <h2
+        className={cn(
+          "text-xl font-semibold",
+          theme === "dark" ? "text-white" : "text-gray-900",
+        )}
+      >
+        {toolbar.label}
+      </h2>
+      <div className="flex items-center space-x-2">
+        <Button
+          variant={view === Views.MONTH ? "default" : "outline"}
+          size="sm"
+          onClick={() => onViewChange(Views.MONTH)}
+        >
+          Month
+        </Button>
+        <Button
+          variant={view === Views.WEEK ? "default" : "outline"}
+          size="sm"
+          onClick={() => onViewChange(Views.WEEK)}
+        >
+          Week
+        </Button>
+        <Button
+          variant={view === Views.DAY ? "default" : "outline"}
+          size="sm"
+          onClick={() => onViewChange(Views.DAY)}
+        >
+          Day
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+interface DayCellProps {
+  value: Date;
+  children?: React.ReactNode;
+  onAddTask: (date: Date) => void;
+  newTask: NewTaskState;
+  onNewTaskChange: (task: NewTaskState) => void;
+  onNewTaskSave: () => void;
+}
+
+const DayCell: React.FC<DayCellProps> = ({
+  value: date,
+  children,
+  onAddTask,
+  newTask,
+  onNewTaskChange,
+  onNewTaskSave,
+}) => {
+  const [isHovered, setIsHovered] = useState(false);
+  const isNewTaskDate =
+    newTask.date && date && newTask.date.getTime() === date.getTime();
+
+  return (
+    <div
+      className="relative w-full h-full group"
+      onMouseEnter={() => date && setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {children}
+      {!isNewTaskDate && (
+        <div
+          className={cn(
+            "absolute inset-0 top-6 flex items-start justify-end p-1",
+            "transition-opacity duration-200",
+            isHovered ? "opacity-100" : "opacity-0 group-hover:opacity-100",
+          )}
+        >
+          <div
+            className={cn(
+              "w-6 h-6 rounded flex items-center justify-center cursor-pointer",
+              "bg-transparent hover:bg-gray-100 dark:hover:bg-slate-700",
+              "transition-colors duration-200",
+            )}
+            onClick={(e) => {
+              e.stopPropagation();
+              onAddTask(date);
+            }}
+          >
+            <Plus
+              className={cn(
+                "w-4 h-4",
+                "text-gray-600 dark:text-gray-400",
+                "group-hover:text-gray-900 dark:group-hover:text-white",
+                "transition-colors duration-200",
+              )}
+            />
+          </div>
+        </div>
+      )}
+      {isNewTaskDate && (
+        <div className="absolute inset-x-0 top-6 p-1 z-10">
+          <Input
+            autoFocus
+            value={newTask.title}
+            onChange={(e) =>
+              onNewTaskChange({ ...newTask, title: e.target.value })
+            }
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                onNewTaskSave();
+              } else if (e.key === "Escape") {
+                onNewTaskChange({
+                  date: null,
+                  isEditing: false,
+                  title: "",
+                });
+              }
+            }}
+            onBlur={onNewTaskSave}
+            className={cn(
+              "w-full text-sm h-8 px-2",
+              "bg-white dark:bg-slate-800",
+              "border border-gray-200 dark:border-slate-700",
+              "text-gray-900 dark:text-white",
+              "placeholder:text-gray-400 dark:placeholder:text-gray-500",
+              "focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400",
+              "focus:border-transparent",
+            )}
+            placeholder="Enter task title..."
+          />
+        </div>
+      )}
+    </div>
+  );
+};
+
 export const Calendar: React.FC<CalendarProps> = ({
   theme = "light",
   onTaskSelect,
 }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [view, setView] = useState(Views.MONTH);
+  const [view, setView] = useState<View>(Views.MONTH);
   const [date, setDate] = useState(new Date());
-  const [hoveredDate, setHoveredDate] = useState<Date | null>(null);
   const [newTask, setNewTask] = useState<NewTaskState>({
     date: null,
     isEditing: false,
@@ -89,14 +289,23 @@ export const Calendar: React.FC<CalendarProps> = ({
     }
   };
 
-  const handleEventDrop = async ({ event, start, end }: any) => {
+  const handleEventDrop = async ({
+    event,
+    start,
+    end,
+  }: {
+    event: CalendarEvent;
+    start: Date;
+    end: Date;
+  }) => {
     try {
-      const updatedTask = {
+      const updatedTask: Task = {
         ...event.task,
         schedule: {
           ...event.task.schedule,
           date: start,
-        },
+          enabled: true,
+        } as TaskSchedule,
         updatedAt: new Date().toISOString(),
       };
 
@@ -110,7 +319,7 @@ export const Calendar: React.FC<CalendarProps> = ({
     }
   };
 
-  const handleAddTask = async (date: Date) => {
+  const handleAddTask = (date: Date) => {
     setNewTask({
       date,
       isEditing: true,
@@ -162,172 +371,9 @@ export const Calendar: React.FC<CalendarProps> = ({
       task,
     }));
 
-  const CustomEvent = ({ event }: { event: CalendarEvent }) => (
-    <TaskHoverCard task={event.task}>
-      <div
-        className={cn(
-          "truncate px-2 py-1 text-sm rounded cursor-pointer",
-          event.task.priority === "high"
-            ? "bg-red-100 dark:bg-red-900/20"
-            : event.task.priority === "medium"
-            ? "bg-yellow-100 dark:bg-yellow-900/20"
-            : "bg-green-100 dark:bg-green-900/20",
-        )}
-      >
-        {event.title}
-      </div>
-    </TaskHoverCard>
-  );
-
-  const CustomToolbar = (toolbar: any) => {
-    const goToToday = () => {
-      toolbar.onNavigate("TODAY");
-    };
-
-    return (
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => toolbar.onNavigate("PREV")}
-          >
-            Previous
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => toolbar.onNavigate("NEXT")}
-          >
-            Next
-          </Button>
-          <Button variant="outline" size="sm" onClick={goToToday}>
-            Today
-          </Button>
-        </div>
-        <h2
-          className={cn(
-            "text-xl font-semibold",
-            theme === "dark" ? "text-white" : "text-gray-900",
-          )}
-        >
-          {toolbar.label}
-        </h2>
-        <div className="flex items-center space-x-2">
-          <Button
-            variant={view === Views.MONTH ? "default" : "outline"}
-            size="sm"
-            onClick={() => setView(Views.MONTH)}
-          >
-            Month
-          </Button>
-          <Button
-            variant={view === Views.WEEK ? "default" : "outline"}
-            size="sm"
-            onClick={() => setView(Views.WEEK)}
-          >
-            Week
-          </Button>
-          <Button
-            variant={view === Views.DAY ? "default" : "outline"}
-            size="sm"
-            onClick={() => setView(Views.DAY)}
-          >
-            Day
-          </Button>
-        </div>
-      </div>
-    );
-  };
-
-  const DayCell = ({
-    value: date,
-    children,
-  }: {
-    value: Date;
-    children?: React.ReactNode;
-  }) => {
-    const isHovered =
-      hoveredDate && date && hoveredDate.getTime() === date.getTime();
-    const isNewTaskDate =
-      newTask.date && date && newTask.date.getTime() === date.getTime();
-
-    return (
-      <div
-        className="relative w-full h-full group"
-        onMouseEnter={() => date && setHoveredDate(date)}
-        onMouseLeave={() => setHoveredDate(null)}
-      >
-        {children}
-        {!isNewTaskDate && (
-          <div
-            className={cn(
-              "absolute inset-0 top-6 flex items-start justify-end p-1",
-              "transition-opacity duration-200",
-              isHovered ? "opacity-100" : "opacity-0 group-hover:opacity-100",
-            )}
-          >
-            <div
-              className={cn(
-                "w-6 h-6 rounded flex items-center justify-center cursor-pointer",
-                "bg-transparent hover:bg-gray-100 dark:hover:bg-slate-700",
-                "transition-colors duration-200",
-              )}
-              onClick={(e) => {
-                e.stopPropagation();
-                handleAddTask(date);
-              }}
-            >
-              <Plus
-                className={cn(
-                  "w-4 h-4",
-                  "text-gray-600 dark:text-gray-400",
-                  "group-hover:text-gray-900 dark:group-hover:text-white",
-                  "transition-colors duration-200",
-                )}
-              />
-            </div>
-          </div>
-        )}
-        {isNewTaskDate && (
-          <div className="absolute inset-x-0 top-6 p-1 z-10">
-            <Input
-              autoFocus
-              value={newTask.title}
-              onChange={(e) =>
-                setNewTask((prev) => ({ ...prev, title: e.target.value }))
-              }
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  handleNewTaskSave();
-                } else if (e.key === "Escape") {
-                  setNewTask({
-                    date: null,
-                    isEditing: false,
-                    title: "",
-                  });
-                }
-              }}
-              onBlur={handleNewTaskSave}
-              className={cn(
-                "w-full text-sm h-8 px-2",
-                "bg-white dark:bg-slate-800",
-                "border border-gray-200 dark:border-slate-700",
-                "text-gray-900 dark:text-white",
-                "placeholder:text-gray-400 dark:placeholder:text-gray-500",
-                "focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400",
-                "focus:border-transparent",
-              )}
-              placeholder="Enter task title..."
-            />
-          </div>
-        )}
-      </div>
-    );
-  };
   return (
     <div className="flex-1 p-6">
-      <BigCalendar
+      <BigCalendar<CalendarEvent>
         localizer={localizer}
         events={events}
         startAccessor="start"
@@ -340,11 +386,26 @@ export const Calendar: React.FC<CalendarProps> = ({
         onNavigate={setDate}
         components={{
           event: CustomEvent,
-          toolbar: CustomToolbar,
-          dateCellWrapper: DayCell,
+          toolbar: (props) => (
+            <CustomToolbar
+              toolbar={props}
+              view={view}
+              onViewChange={setView}
+              theme={theme}
+            />
+          ),
+          dateCellWrapper: (props) => (
+            <DayCell
+              {...props}
+              onAddTask={handleAddTask}
+              newTask={newTask}
+              onNewTaskChange={setNewTask}
+              onNewTaskSave={handleNewTaskSave}
+            />
+          ),
         }}
         onSelectEvent={(event: CalendarEvent) => onTaskSelect(event.task)}
-        onEventDrop={handleEventDrop}
+        onEventDrop={handleEventDrop as any}
         draggableAccessor={() => true}
         className={cn(
           "rounded-lg border",

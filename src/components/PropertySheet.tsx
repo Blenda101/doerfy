@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { format } from "date-fns";
 import { Task, TaskSchedule } from "../types/task";
 import { Button } from "./ui/button";
@@ -14,6 +14,7 @@ import { EditableTitle } from "./forms/EditableTitle";
 import { cn } from "../lib/utils";
 import { Theme } from "../utils/theme";
 import { supabase } from "../utils/supabaseClient";
+import debounce from "lodash/debounce";
 import {
   CalendarIcon,
   StarIcon,
@@ -41,8 +42,8 @@ export const PropertySheet: React.FC<PropertySheetProps> = ({
   onClose,
   onTaskUpdate,
   theme = "light",
-  lists = [],
-  stories = [],
+  lists,
+  stories,
 }) => {
   const [isSchedulerOpen, setIsSchedulerOpen] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -75,13 +76,21 @@ export const PropertySheet: React.FC<PropertySheetProps> = ({
     loadAvatar();
   }, []);
 
+  const debouncedUpdate = useCallback(
+    debounce((updatedTask: Task) => {
+      onTaskUpdate(updatedTask);
+    }, 700),
+    [onTaskUpdate]
+  );
+
   const handleTaskUpdate = (updates: Partial<Task>) => {
     if (!task) return;
-    onTaskUpdate({
+    const updatedTask = {
       ...task,
       ...updates,
       updatedAt: new Date().toISOString(),
-    });
+    };
+    debouncedUpdate(updatedTask);
   };
 
   const handleTitleChange = (newTitle: string) => {
@@ -109,7 +118,6 @@ export const PropertySheet: React.FC<PropertySheetProps> = ({
     return `${formattedDate}, ${task.schedule.time}${leadText}`;
   };
 
-  // Header actions for the Sheet component
   const headerActions = (
     <Button
       variant="ghost"
@@ -120,8 +128,6 @@ export const PropertySheet: React.FC<PropertySheetProps> = ({
     </Button>
   );
 
-  console.log(task);
-
   return (
     <Sheet
       title="About Task"
@@ -130,7 +136,6 @@ export const PropertySheet: React.FC<PropertySheetProps> = ({
       theme={theme}
       headerActions={headerActions}
     >
-      {/* Sticky Title Container */}
       <div className="sticky top-0 bg-inherit z-50 -mt-6 pt-6 pb-4">
         <EditableTitle
           title={task.title}
@@ -139,9 +144,7 @@ export const PropertySheet: React.FC<PropertySheetProps> = ({
         />
       </div>
 
-      {/* Scrollable Content */}
-      <div className="space-y-6">
-        {/* Task Actions */}
+      <div className="space-y-6 overflow-y-auto max-h-[calc(100vh-200px)] pr-2">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-4">
             <Button
@@ -218,7 +221,6 @@ export const PropertySheet: React.FC<PropertySheetProps> = ({
           </div>
         </div>
 
-        {/* Task Description */}
         <div className="w-full">
           <Label className="dark:text-slate-200 mb-2">Description</Label>
           <Editor
@@ -232,7 +234,6 @@ export const PropertySheet: React.FC<PropertySheetProps> = ({
           />
         </div>
 
-        {/* Task Labels */}
         <div>
           <LabelEditor labels={task.labels} onChange={handleLabelsChange} />
         </div>
@@ -244,7 +245,6 @@ export const PropertySheet: React.FC<PropertySheetProps> = ({
           )}
         />
 
-        {/* Task Properties Tabs */}
         <Tabs defaultValue="properties">
           <TabsList
             className={cn(
@@ -326,7 +326,7 @@ export const PropertySheet: React.FC<PropertySheetProps> = ({
 
               <EditableProperty
                 label="List"
-                value={task.list_id || "None"}
+                value={lists.find(l => l.id === task.list_id)?.name || "None"}
                 options={lists.map((list) => ({
                   value: list.id,
                   label: list.name,
@@ -374,7 +374,7 @@ export const PropertySheet: React.FC<PropertySheetProps> = ({
 
               <EditableProperty
                 label="Story"
-                value={task.story || "None"}
+                value={stories.find(s => s.id === task.story)?.title || "None"}
                 options={stories.map((story) => ({
                   value: story.id,
                   label: story.title,

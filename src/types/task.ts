@@ -2,6 +2,7 @@ export type TimeStage = "queue" | "do" | "doing" | "today" | "done";
 export type Priority = "high" | "medium" | "low";
 export type Energy = "high" | "medium" | "low";
 export type AgingStatus = "normal" | "warning" | "overdue";
+export type RecurringPattern = "daily" | "weekly" | "monthly" | "yearly";
 
 export interface ChecklistItem {
   id: string;
@@ -26,7 +27,7 @@ export interface TaskSchedule {
   durationHours?: number;
   alarmEnabled?: boolean;
   recurring?: {
-    type: "daily" | "weekly" | "monthly" | "yearly";
+    type: RecurringPattern;
     interval: number;
     weekDays?: string[];
     monthDay?: number;
@@ -60,11 +61,6 @@ export interface Task {
 
   // Scheduling
   schedule?: TaskSchedule;
-
-  isReoccurring?: boolean;
-  reoccurringPattern?: string | null;
-  dueDate?: string | null;
-  alarm?: boolean;
 
   // Metadata
   labels: string[];
@@ -115,3 +111,35 @@ export const SCHEDULING_THRESHOLDS = {
 export function generateTaskId(): string {
   return crypto.randomUUID();
 }
+
+export type TaskSchema = {
+  id: string;
+  title: string;
+  description: string;
+  timestage: string;
+  stage_entry_date: string;
+  assignee: string;
+  list_id: string;
+  priority: string;
+  energy: string;
+  location: string | null;
+  story: string | null;
+  labels: string[];
+  icon: string;
+  highlighted: boolean;
+  status: string | null;
+  aging_status: string | null;
+  created_at: string;
+  updated_at: string;
+  created_by: string;
+  show_in_time_box: boolean;
+  show_in_list: boolean;
+  show_in_calendar: boolean;
+  schedule_date: string | null;
+  schedule_time: string | null;
+  lead_days: number;
+  lead_hours: number;
+  duration_days: number;
+  duration_hours: number;
+  recurring: RecurringPattern | null;
+};

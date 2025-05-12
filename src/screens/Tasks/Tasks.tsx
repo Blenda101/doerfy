@@ -12,7 +12,7 @@ import { FilterPanel } from "../../components/FilterPanel";
 import { PropertySheet } from "../../components/PropertySheet";
 import { PtbTimeBox } from "../PtbTimeBox/PtbTimeBox";
 import { TaskList } from "../TaskList/TaskList";
-import { Calendar } from "../Calendar/Calendar";
+import { Calendar } from "../../modules/tasks/calendar";
 import { AddListDialog } from "../../components/AddListDialog";
 import {
   Theme,
@@ -29,13 +29,11 @@ import ToggleButton from "../../components/ui/toggle";
 import { useLists } from "../../hooks/useLists";
 import useStories from "../../hooks/useStories";
 
-// Constants for local storage keys
 const STORAGE_KEYS = {
   ACTIVE_TAB: "activeTaskTab",
   SELECTED_TASK: "selectedTaskId",
 };
 
-// Types for component state
 type ActiveTab = "timebox" | "lists" | "calendar";
 type ActivePanel = "filter" | "property" | null;
 type HeaderProps = {
@@ -47,7 +45,6 @@ type HeaderProps = {
 };
 
 export const Tasks: React.FC = () => {
-  // State Management
   const [activeTab, setActiveTab] = useState<ActiveTab>(
     () =>
       (localStorage.getItem(STORAGE_KEYS.ACTIVE_TAB) as ActiveTab) || "timebox",
@@ -66,17 +63,14 @@ export const Tasks: React.FC = () => {
   const { stories } = useStories("todo");
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
-  // Theme Management
   useEffect(() => {
     setThemeUtil(theme);
   }, [theme]);
 
-  // Persist active tab to localStorage
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.ACTIVE_TAB, activeTab);
   }, [activeTab]);
 
-  // Persist selected task to localStorage
   useEffect(() => {
     if (selectedTaskId) {
       localStorage.setItem(STORAGE_KEYS.SELECTED_TASK, selectedTaskId);
@@ -85,7 +79,6 @@ export const Tasks: React.FC = () => {
     }
   }, [selectedTaskId]);
 
-  // Fetch tasks from Supabase
   useEffect(() => {
     const fetchTasks = async () => {
       try {
@@ -105,7 +98,6 @@ export const Tasks: React.FC = () => {
 
         if (error) throw error;
 
-        // Transform tasks to match our frontend model
         const transformedTasks =
           data?.map((task) => ({
             ...task,
@@ -122,7 +114,6 @@ export const Tasks: React.FC = () => {
 
         setTasks(transformedTasks);
 
-        // Clear selected task if it no longer exists
         if (
           selectedTaskId &&
           !transformedTasks?.find((t) => t.id === selectedTaskId)
@@ -144,7 +135,6 @@ export const Tasks: React.FC = () => {
     fetchTasks();
   }, [selectedTaskId]);
 
-  // Event Handlers
   const handlePanelClose = () => {
     setActivePanel(null);
     setSelectedTaskId(null);
@@ -167,12 +157,28 @@ export const Tasks: React.FC = () => {
     }
   };
 
-  // Task Update Handler
   const handleTaskUpdate = async (updatedTask: Task) => {
     try {
       setIsLoading(true);
 
-      // Update task in Supabase
+      const scheduleData = updatedTask.schedule?.enabled ? {
+        schedule_date: updatedTask.schedule.date,
+        schedule_time: updatedTask.schedule.time,
+        lead_days: updatedTask.schedule.leadDays || 0,
+        lead_hours: updatedTask.schedule.leadHours || 0,
+        duration_days: updatedTask.schedule.durationDays || 0,
+        duration_hours: updatedTask.schedule.durationHours || 0,
+        recurring: updatedTask.schedule.recurring?.type || null,
+      } : {
+        schedule_date: null,
+        schedule_time: null,
+        lead_days: 0,
+        lead_hours: 0,
+        duration_days: 0,
+        duration_hours: 0,
+        recurring: null,
+      };
+
       const { error } = await supabase
         .from("tasks")
         .update({
@@ -195,12 +201,12 @@ export const Tasks: React.FC = () => {
           status: updatedTask.status,
           aging_status: updatedTask.agingStatus,
           updated_at: new Date().toISOString(),
+          ...scheduleData,
         })
         .eq("id", updatedTask.id);
 
       if (error) throw error;
 
-      // Refresh tasks after update
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -226,6 +232,19 @@ export const Tasks: React.FC = () => {
           createdAt: task.created_at,
           updatedAt: task.updated_at,
           createdBy: task.created_by,
+          schedule: task.schedule_date ? {
+            enabled: true,
+            date: new Date(task.schedule_date),
+            time: task.schedule_time || "",
+            leadDays: task.lead_days || 0,
+            leadHours: task.lead_hours || 0,
+            durationDays: task.duration_days || 0,
+            durationHours: task.duration_hours || 0,
+            recurring: task.recurring ? {
+              type: task.recurring,
+              interval: 1,
+            } : undefined,
+          } : undefined,
         })) || [];
 
       setTasks(transformedTasks);
@@ -238,7 +257,6 @@ export const Tasks: React.FC = () => {
     }
   };
 
-  // Helper function to get header props based on active tab
   const getHeaderProps = (): HeaderProps => {
     switch (activeTab) {
       case "timebox":
@@ -273,7 +291,6 @@ export const Tasks: React.FC = () => {
         theme === "dark" ? "dark bg-[#0F172A]" : "bg-white",
       )}
     >
-      {/* Sidebar */}
       <Sidebar
         isSidebarExpanded={isSidebarExpanded}
         theme={theme}
@@ -283,13 +300,11 @@ export const Tasks: React.FC = () => {
         }
       />
 
-      {/* Main Content */}
       <Tabs
         value={activeTab}
         onValueChange={(value) => setActiveTab(value as ActiveTab)}
         className="flex-1 flex flex-col h-full"
       >
-        {/* Header */}
         <TasksHeader
           {...getHeaderProps()}
           theme={theme}
@@ -326,12 +341,9 @@ export const Tasks: React.FC = () => {
           onFilterClick={handleFilterClick}
         />
 
-        {/* Filter Header */}
         <FilterHeader theme={theme} view={activeTab} />
 
-        {/* Content Area */}
         <div className="flex-1 flex overflow-hidden">
-          {/* Main Content Area */}
           <div className="flex-1 overflow-auto">
             {isLoading ? (
               <div className="flex items-center justify-center h-full">
@@ -372,7 +384,6 @@ export const Tasks: React.FC = () => {
             )}
           </div>
 
-          {/* Side Panels */}
           {activePanel === "filter" && (
             <div
               className={cn(
