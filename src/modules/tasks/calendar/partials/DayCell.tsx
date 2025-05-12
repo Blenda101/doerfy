@@ -1,12 +1,6 @@
 import React, { useState } from "react";
 import { Plus } from "lucide-react";
 import { DayCellProps, NewTaskState } from "../types";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "../../../../components/ui/tooltip";
 import { cn } from "../../../../lib/utils";
 import {
   Popover,
@@ -21,7 +15,6 @@ import { Input } from "../../../../components/ui/input";
  */
 export const DayCell: React.FC<DayCellProps> = ({
   value: date,
-  children,
   createTask,
 }) => {
   const [task, setTask] = useState<NewTaskState>({

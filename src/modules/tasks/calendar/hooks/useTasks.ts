@@ -61,8 +61,9 @@ export const useTasks = (): UseTasksReturn => {
   // Create a new task
   const createTask = async (title: string, date: Date): Promise<Task> => {
     try {
-      const task = await createNewTask("personal");
-      task.title = title.trim();
+      const task = await createNewTask("personal", undefined, undefined, {
+        show_in_calendar: true,
+      });
       const schedule: TaskSchedule = {
         enabled: true,
         date: date,

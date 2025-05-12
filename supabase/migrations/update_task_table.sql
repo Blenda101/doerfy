@@ -1,0 +1,10 @@
+ALTER TABLE tasks
+ADD COLUMN date DATE,
+ADD COLUMN time TIME,
+ADD COLUMN lead_days INTEGER,
+ADD COLUMN lead_hours INTEGER,
+ADD COLUMN duration_days INTEGER,
+ADD COLUMN duration_hours INTEGER,
+ADD COLUMN recurring TEXT;
+
+

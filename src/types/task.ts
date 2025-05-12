@@ -115,3 +115,28 @@ export const SCHEDULING_THRESHOLDS = {
 export function generateTaskId(): string {
   return crypto.randomUUID();
 }
+
+export type TaskSchema = {
+  id: string;
+  title: string;
+  description: string;
+  time_stage: string;
+  stage_entry_date: string;
+  assignee: string;
+  list_id: string;
+  priority: string;
+  energy: string;
+  location: string | null;
+  story: string | null;
+  labels: string[];
+  icon: string;
+  highlighted: boolean;
+  status: string | null;
+  aging_status: string | null;
+  created_at: string;
+  updated_at: string;
+  created_by: string;
+  show_in_time_box: boolean;
+  show_in_list: boolean;
+  show_in_calendar: boolean;
+};

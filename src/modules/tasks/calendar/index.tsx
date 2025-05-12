@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   Calendar as BigCalendar,
   dateFnsLocalizer,
@@ -13,6 +13,7 @@ import { CustomEvent } from "./partials/CustomEvent";
 import { CustomToolbar } from "./partials/CustomToolbar";
 import { DayCell } from "./partials/DayCell";
 import { useTasks } from "./hooks/useTasks";
+import { Timecell } from "./partials/Timecell";
 
 // Configure date-fns localizer for react-big-calendar
 const locales = {
@@ -43,6 +44,14 @@ export const Calendar: React.FC<CalendarProps> = ({
     isEditing: false,
     title: "",
   });
+
+  const calendarRef = useRef<HTMLDivElement>(null);
+  const [slotPopoverOpen, setSlotPopoverOpen] = useState(false);
+  const [slotPopoverData, setSlotPopoverData] = useState<{
+    start: Date;
+    end: Date;
+    position: { top: number; left: number };
+  } | null>(null);
 
   // Handle task drag and drop
   const handleEventDrop = async ({ event, start }: any) => {
@@ -106,7 +115,7 @@ export const Calendar: React.FC<CalendarProps> = ({
 
   console.log({ events, tasks });
   return (
-    <div className="flex-1 p-6">
+    <div className="relative flex-1 p-6" ref={calendarRef}>
       <BigCalendar<CalendarEvent>
         localizer={localizer}
         events={events}
@@ -140,6 +149,24 @@ export const Calendar: React.FC<CalendarProps> = ({
           ),
         }}
         onSelectEvent={(event: CalendarEvent) => onTaskSelect(event.task)}
+        onSelectSlot={(slotInfo) => {
+          const { start, end, bounds } = slotInfo;
+
+          if (bounds && calendarRef.current) {
+            const containerRect = calendarRef.current.getBoundingClientRect();
+
+            setSlotPopoverData({
+              start,
+              end,
+              position: {
+                top: bounds.top - containerRect.top,
+                left: bounds.left - containerRect.left,
+              },
+            });
+
+            setSlotPopoverOpen(true);
+          }
+        }}
         className={cn(
           "rounded-lg border",
           theme === "dark"
@@ -148,6 +175,16 @@ export const Calendar: React.FC<CalendarProps> = ({
         )}
         selectable
       />
+      {slotPopoverData && (
+        <Timecell
+          open={slotPopoverOpen}
+          start={slotPopoverData.start}
+          end={slotPopoverData.end}
+          position={slotPopoverData.position}
+          createTask={createTask}
+          onClose={() => setSlotPopoverOpen(false)}
+        />
+      )}
     </div>
   );
 };

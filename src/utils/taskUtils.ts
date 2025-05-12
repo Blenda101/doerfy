@@ -1,10 +1,11 @@
-import { Task } from "../types/task";
+import { Task, TaskSchema } from "../types/task";
 import { supabase } from "./supabaseClient";
 
 export async function createNewTask(
   title: string = "",
   timestage: string = "queue",
   listId?: string,
+  properties?: Partial<TaskSchema>,
 ): Promise<Task> {
   try {
     const {
@@ -44,6 +45,7 @@ export async function createNewTask(
       created_at: now,
       updated_at: now,
       created_by: user.id,
+      ...properties,
     };
 
     console.log("Creating new task:", task);
