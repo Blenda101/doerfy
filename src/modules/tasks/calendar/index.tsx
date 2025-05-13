@@ -24,7 +24,7 @@ import {
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { Label } from "../../../components/ui/label";
-import getDateInterval from "./utils/getDateInterval";
+import { getDateInterval, getSlotInterval } from "./utils/getDateInterval";
 
 const locales = {
   "en-US": enUS,
@@ -54,12 +54,13 @@ const CalendarView: React.FC<CalendarProps> = (props) => {
 
   // Convert tasks to calendar events
   const events: CalendarEvent[] = tasks
-    .filter((task) => task.schedule?.enabled && task.schedule.date)
+    .filter(
+      (task) => task.schedule && task.schedule?.enabled && task.schedule.date,
+    )
     .map((task) => ({
       id: task.id,
       title: task.title,
-      start: new Date(task.schedule!.date!),
-      end: new Date(task.schedule!.date!),
+      ...getSlotInterval(task.schedule!),
       task,
     }));
 
@@ -68,6 +69,7 @@ const CalendarView: React.FC<CalendarProps> = (props) => {
   const handleSelectSlot = ({ start, end }: SlotInfo) => {
     setSelectedSlot({ start, end });
     setIsDialogOpen(true);
+    console.log({ start, end, value: getDateInterval({ start, end }) });
   };
 
   const handleCreateTask = async () => {
@@ -93,6 +95,8 @@ const CalendarView: React.FC<CalendarProps> = (props) => {
   return (
     <div className="relative flex-1 p-6" ref={calendarRef}>
       <Calendar
+        selectable
+        resizable
         localizer={localizer}
         events={events}
         startAccessor="start"
@@ -102,7 +106,6 @@ const CalendarView: React.FC<CalendarProps> = (props) => {
         onView={setView}
         date={date}
         onNavigate={setDate}
-        selectable
         components={{
           event: CustomEvent,
           toolbar: (props) => (

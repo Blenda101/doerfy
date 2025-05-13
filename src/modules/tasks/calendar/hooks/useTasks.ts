@@ -4,7 +4,7 @@ import { loadTasks, saveTasks } from "../../../../utils/storage";
 import { getAuthenticatedUser } from "../../../../utils/auth";
 import { supabase } from "../../../../utils/supabaseClient";
 import { getTask } from "../../../../utils/task";
-import getDateInterval from "../utils/getDateInterval";
+import { getDateInterval } from "../utils/getDateInterval";
 import { mapTaskFromSupabase } from "../../../../utils/taskMapper";
 interface UseTasksReturn {
   tasks: Task[];
