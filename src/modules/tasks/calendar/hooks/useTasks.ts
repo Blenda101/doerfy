@@ -54,8 +54,8 @@ export const useTasks = (): UseTasksReturn => {
       const updatedTasks = tasks.map((task) =>
         task.id === updatedTask.id ? updatedTask : task,
       );
-      await saveTasks(updatedTasks);
       setTasks(updatedTasks);
+      await saveTasks(updatedTasks);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err : new Error("Failed to update task"));
@@ -97,22 +97,6 @@ export const useTasks = (): UseTasksReturn => {
       }
 
       const task = mapTaskFromSupabase(data, user.id);
-
-      // const task = await createNewTask(
-      //   properties.title,
-      //   undefined,
-      //   undefined,
-      //   properties,
-      // );
-      // const schedule: TaskSchedule = {
-      //   enabled: true,
-      //   date: properties.schedule ? new Date(properties.schedule_date) : null,
-      //   time: properties.schedule_time || "09:00",
-      //   leadDays: properties.duration_days || 0,
-      //   leadHours: properties.duration_hours || 0,
-      // };
-      // task.schedule = schedule;
-
       const updatedTasks = [task, ...tasks];
       await saveTasks(updatedTasks);
       setTasks(updatedTasks);

@@ -25,6 +25,7 @@ import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { Label } from "../../../components/ui/label";
 import { getDateInterval, getSlotInterval } from "./utils/getDateInterval";
+import { Task } from "../../../types/task";
 
 const locales = {
   "en-US": enUS,
@@ -40,7 +41,7 @@ const Calendar = withDragAndDrop<CalendarEvent>(BigCalendar);
 
 const CalendarView: React.FC<CalendarProps> = (props) => {
   const { theme = "light", onTaskSelect } = props;
-  const { tasks, isLoading, error, createTask } = useTasks();
+  const { tasks, isLoading, error, createTask, updateTask } = useTasks();
   const [view, setView] = useState<View>(Views.DAY);
   const [date, setDate] = useState(new Date());
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -51,6 +52,70 @@ const CalendarView: React.FC<CalendarProps> = (props) => {
   const [newTaskTitle, setNewTaskTitle] = useState("");
 
   const calendarRef = useRef<HTMLDivElement>(null);
+
+  // Handle event drag and drop
+  const moveEvent = async ({
+    event,
+    start,
+    end,
+  }: {
+    event: CalendarEvent;
+    start: Date;
+    end: Date;
+  }) => {
+    try {
+      const { schedule_date, schedule_time, duration_days, duration_hours } =
+        getDateInterval({ start, end });
+      const updatedTask = {
+        ...event.task,
+        schedule: {
+          ...event.task.schedule,
+          date: new Date(schedule_date),
+          time: schedule_time,
+          durationDays: duration_days,
+          durationHours: duration_hours,
+          enabled: true,
+        },
+        updatedAt: new Date().toISOString(),
+      };
+
+      await updateTask(updatedTask);
+    } catch (error) {
+      console.error("Error moving task:", error);
+    }
+  };
+
+  // Handle event resize
+  const resizeEvent = async ({
+    event,
+    start,
+    end,
+  }: {
+    event: CalendarEvent;
+    start: Date;
+    end: Date;
+  }) => {
+    try {
+      const { schedule_date, schedule_time, duration_days, duration_hours } =
+        getDateInterval({ start, end });
+      const updatedTask: Task = {
+        ...event.task,
+        schedule: {
+          ...event.task.schedule,
+          date: new Date(schedule_date),
+          time: schedule_time,
+          durationDays: duration_days,
+          durationHours: duration_hours,
+          enabled: true,
+        },
+        updatedAt: new Date().toISOString(),
+      };
+      console.log({ updatedTask });
+      await updateTask(updatedTask);
+    } catch (error) {
+      console.error("Error resizing task:", error);
+    }
+  };
 
   // Convert tasks to calendar events
   const events: CalendarEvent[] = tasks
@@ -119,6 +184,9 @@ const CalendarView: React.FC<CalendarProps> = (props) => {
         }}
         onSelectEvent={(event: CalendarEvent) => onTaskSelect(event.task)}
         onSelectSlot={handleSelectSlot}
+        onEventDrop={moveEvent as any}
+        onEventResize={resizeEvent as any}
+        draggableAccessor={() => true}
         slotPropGetter={(date) => {
           if (
             selectedSlot &&

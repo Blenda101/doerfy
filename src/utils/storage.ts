@@ -39,7 +39,7 @@ export async function saveTasks(tasks: Task[]): Promise<void> {
 
     const currentTime = new Date().toISOString();
 
-    const tasksToUpsert = tasks.map((task) => ({
+    const tasksToUpsert: TaskFromSupabase[] = tasks.map((task) => ({
       id: task.id,
       title: task.title,
       description: task.description,
@@ -62,6 +62,14 @@ export async function saveTasks(tasks: Task[]): Promise<void> {
       created_at: task.createdAt || currentTime,
       updated_at: currentTime,
       created_by: user.id,
+      duration_days: task.schedule?.durationDays || 0,
+      duration_hours: task.schedule?.durationHours || 0,
+      lead_days: task.schedule?.leadDays || 0,
+      lead_hours: task.schedule?.leadHours || 0,
+      schedule_date: task.schedule?.date?.toISOString()! || "",
+      schedule_time: task.schedule?.time! || "",
+      recurring: task.schedule?.recurring?.type || null,
+      story_id: task.story,
     }));
 
     const { error } = await supabase.from("tasks").upsert(tasksToUpsert, {

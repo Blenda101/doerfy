@@ -72,7 +72,7 @@ export type TaskFromSupabase = {
   lead_hours: number;
   duration_days: number;
   duration_hours: number;
-  recurring: string | null;
+  recurring: RecurringPattern | null;
 };
 
 export interface Task {
