@@ -38,20 +38,27 @@ Deno.serve(async (req) => {
 
     if (source === "quotable") {
       const response = await fetch(
-        `https://api.quotable.io/search/quotes?query=${encodeURIComponent(query)}`
+        `https://famous-quotes4.p.rapidapi.com/random?count=20&category=${encodeURIComponent(query)}`,
+        {
+          headers: {
+            'x-rapidapi-key': '71ee726678msh59cc6c8ad2811e6p19f45ejsn6562254572de',
+            'x-rapidapi-host': 'famous-quotes4.p.rapidapi.com'
+          }
+        }
       );
+      
 
       if (!response.ok) {
         throw new Error(`Quotable API error: ${response.statusText}`);
-      }
-
+      } 
       const data = await response.json();
-      results = data.results.map((quote: any) => ({
-        id: quote._id,
-        content: quote.content,
+      results = data.map((quote: any) => ({
+        id: quote.id,
+        content: quote.text,
         author: quote.author,
-        tags: quote.tags || [],
+        tags: quote.category ? [quote.category] : [],
       }));
+
     } else if (source === "zenquotes") {
       // const apiKey = Deno.env.get('ZENQUOTES_API_KEY');
       // if (!apiKey) {
