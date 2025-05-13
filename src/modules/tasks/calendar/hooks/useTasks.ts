@@ -72,9 +72,9 @@ export const useTasks = (): UseTasksReturn => {
         date: properties.schedule_date
           ? new Date(properties.schedule_date)
           : null,
-        time: "09:00",
-        leadDays: 0,
-        leadHours: 0,
+        time: properties.schedule_time || "09:00",
+        leadDays: properties.duration_days || 0,
+        leadHours: properties.duration_hours || 0,
       };
       task.schedule = schedule;
 

@@ -23,6 +23,7 @@ import {
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { Label } from "../../../components/ui/label";
+import getDateInterval from "./utils/getDateInterval";
 
 const locales = {
   "en-US": enUS,
@@ -61,6 +62,8 @@ const CalendarView: React.FC<CalendarProps> = (props) => {
       task,
     }));
 
+  console.log({ events, tasks });
+
   const handleSelectSlot = ({ start, end }: { start: Date; end: Date }) => {
     setSelectedSlot({ start, end });
     setIsDialogOpen(true);
@@ -70,19 +73,16 @@ const CalendarView: React.FC<CalendarProps> = (props) => {
     if (!selectedSlot || !newTaskTitle.trim()) return;
 
     try {
+      const { schedule_date, schedule_time, duration_days, duration_hours } =
+        getDateInterval(selectedSlot);
+
       await createTask({
         title: newTaskTitle.trim(),
-        schedule_date: selectedSlot.start.toISOString(),
+        schedule_date,
+        schedule_time,
+        duration_days,
+        duration_hours,
         show_in_calendar: true,
-        timestage: "queue",
-        stage_entry_date: new Date().toISOString(),
-        aging_status: "normal",
-        priority: "medium",
-        energy: "medium",
-        show_in_time_box: true,
-        show_in_list: true,
-        icon: "blue",
-        highlighted: false,
       });
       setNewTaskTitle("");
       setIsDialogOpen(false);
@@ -112,8 +112,6 @@ const CalendarView: React.FC<CalendarProps> = (props) => {
         date={date}
         onNavigate={setDate}
         selectable
-        step={30}
-        timeslots={1}
         components={{
           event: CustomEvent,
           toolbar: (props) => (
@@ -127,15 +125,6 @@ const CalendarView: React.FC<CalendarProps> = (props) => {
         }}
         onSelectEvent={(event: CalendarEvent) => onTaskSelect(event.task)}
         onSelectSlot={handleSelectSlot}
-        dayPropGetter={(date) => {
-          // For example, let's highlight weekends
-          const dayOfWeek = date.getDay(); // 0 = Sunday, 6 = Saturday
-          const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-
-          return {
-            className: isWeekend ? "bg-gray-200" : "", // Add Tailwind classes for styling
-          };
-        }}
         slotPropGetter={(date) => {
           if (
             selectedSlot &&
