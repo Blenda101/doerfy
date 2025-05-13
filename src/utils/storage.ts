@@ -46,7 +46,7 @@ export async function saveTasks(tasks: Task[]): Promise<void> {
       timestage: task.timeStage,
       stage_entry_date: task.stageEntryDate,
       assignee: user.id,
-      list_id: task.,
+      list_id: task.listId,
       priority: task.priority,
       energy: task.energy,
       location: task.location,
