@@ -13,6 +13,16 @@ import { CustomEvent } from "./partials/CustomEvent";
 import { CustomToolbar } from "./partials/CustomToolbar";
 import { useTasks } from "./hooks/useTasks";
 import withDragAndDrop from "react-big-calendar/lib/addons/dragAndDrop";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "../../../components/ui/dialog";
+import { Button } from "../../../components/ui/button";
+import { Input } from "../../../components/ui/input";
+import { Label } from "../../../components/ui/label";
 
 const locales = {
   "en-US": enUS,
@@ -24,13 +34,19 @@ const localizer = dateFnsLocalizer({
   getDay,
   locales,
 });
-const Calendar = withDragAndDrop(BigCalendar);
+const Calendar = withDragAndDrop<CalendarEvent>(BigCalendar);
 
 const CalendarView: React.FC<CalendarProps> = (props) => {
   const { theme = "light", onTaskSelect } = props;
-  const { tasks, isLoading, error } = useTasks();
-  const [view, setView] = useState<View>(Views.MONTH);
+  const { tasks, isLoading, error, createTask } = useTasks();
+  const [view, setView] = useState<View>(Views.DAY);
   const [date, setDate] = useState(new Date());
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedSlot, setSelectedSlot] = useState<{
+    start: Date;
+    end: Date;
+  } | null>(null);
+  const [newTaskTitle, setNewTaskTitle] = useState("");
 
   const calendarRef = useRef<HTMLDivElement>(null);
 
@@ -45,6 +61,36 @@ const CalendarView: React.FC<CalendarProps> = (props) => {
       task,
     }));
 
+  const handleSelectSlot = ({ start, end }: { start: Date; end: Date }) => {
+    setSelectedSlot({ start, end });
+    setIsDialogOpen(true);
+  };
+
+  const handleCreateTask = async () => {
+    if (!selectedSlot || !newTaskTitle.trim()) return;
+
+    try {
+      await createTask({
+        title: newTaskTitle.trim(),
+        schedule_date: selectedSlot.start.toISOString(),
+        show_in_calendar: true,
+        timestage: "queue",
+        stage_entry_date: new Date().toISOString(),
+        aging_status: "normal",
+        priority: "medium",
+        energy: "medium",
+        show_in_time_box: true,
+        show_in_list: true,
+        icon: "blue",
+        highlighted: false,
+      });
+      setNewTaskTitle("");
+      setIsDialogOpen(false);
+    } catch (error) {
+      console.error("Error creating task:", error);
+    }
+  };
+
   if (isLoading) {
     return <div>Loading...</div>;
   }
@@ -55,18 +101,19 @@ const CalendarView: React.FC<CalendarProps> = (props) => {
 
   return (
     <div className="relative flex-1 p-6" ref={calendarRef}>
-      <BigCalendar<CalendarEvent>
+      <Calendar
         localizer={localizer}
         events={events}
         startAccessor="start"
         endAccessor="end"
-        style={{ height: "calc(100vh - 160px)" }}
-        defaultView={Views.DAY}
         views={[Views.MONTH, Views.WEEK, Views.DAY]}
         view={view}
         onView={setView}
         date={date}
         onNavigate={setDate}
+        selectable
+        step={30}
+        timeslots={1}
         components={{
           event: CustomEvent,
           toolbar: (props) => (
@@ -79,14 +126,94 @@ const CalendarView: React.FC<CalendarProps> = (props) => {
           ),
         }}
         onSelectEvent={(event: CalendarEvent) => onTaskSelect(event.task)}
+        onSelectSlot={handleSelectSlot}
+        dayPropGetter={(date) => {
+          // For example, let's highlight weekends
+          const dayOfWeek = date.getDay(); // 0 = Sunday, 6 = Saturday
+          const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+
+          return {
+            className: isWeekend ? "bg-gray-200" : "", // Add Tailwind classes for styling
+          };
+        }}
+        slotPropGetter={(date) => {
+          if (
+            selectedSlot &&
+            date >= selectedSlot.start &&
+            date < selectedSlot.end
+          ) {
+            return {
+              style: {
+                backgroundColor: "rgba(80, 54, 176, 0.1)",
+              },
+            };
+          }
+          return {
+            style: {
+              backgroundColor: "white",
+              border: "none",
+            },
+          };
+        }}
+        style={{ height: "calc(100vh - 160px)" }}
         className={cn(
           "rounded-lg border",
           theme === "dark"
             ? "border-slate-700 bg-slate-800 text-white"
             : "border-gray-200",
         )}
-        selectable
       />
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent
+          className={cn(
+            "sm:max-w-[425px]",
+            "dark:bg-slate-800 dark:border-slate-700",
+          )}
+        >
+          <DialogHeader>
+            <DialogTitle className="dark:text-slate-200">
+              Create New Task
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="title" className="dark:text-slate-200">
+                Task Title
+              </Label>
+              <Input
+                id="title"
+                value={newTaskTitle}
+                onChange={(e) => setNewTaskTitle(e.target.value)}
+                placeholder="Enter task title"
+                className="dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleCreateTask();
+                  }
+                }}
+              />
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsDialogOpen(false)}
+                className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleCreateTask}
+                disabled={!newTaskTitle.trim()}
+                className="dark:bg-purple-600 dark:text-white dark:hover:bg-purple-700"
+              >
+                Create Task
+              </Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
