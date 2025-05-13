@@ -91,4 +91,4 @@ const CalendarView: React.FC<CalendarProps> = (props) => {
   );
 };
 
-export { CalendarView };
+export default CalendarView;
