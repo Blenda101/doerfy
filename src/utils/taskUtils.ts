@@ -89,19 +89,23 @@ export async function createNewTask(
       createdAt: data.created_at,
       updatedAt: data.updated_at,
       createdBy: data.created_by,
-      schedule: data.schedule_date ? {
-        enabled: true,
-        date: new Date(data.schedule_date),
-        time: data.schedule_time || "",
-        leadDays: data.lead_days || 0,
-        leadHours: data.lead_hours || 0,
-        durationDays: data.duration_days || 0,
-        durationHours: data.duration_hours || 0,
-        recurring: data.recurring ? {
-          type: data.recurring,
-          interval: 1,
-        } : undefined,
-      } : undefined,
+      schedule: data.schedule_date
+        ? {
+            enabled: true,
+            date: new Date(data.schedule_date),
+            time: data.schedule_time || "",
+            leadDays: data.lead_days || 0,
+            leadHours: data.lead_hours || 0,
+            durationDays: data.duration_days || 0,
+            durationHours: data.duration_hours || 0,
+            recurring: data.recurring
+              ? {
+                  type: data.recurring,
+                  interval: 1,
+                }
+              : undefined,
+          }
+        : undefined,
       checklistItems: [],
       comments: [],
       attachments: [],

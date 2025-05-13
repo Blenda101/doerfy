@@ -25,7 +25,10 @@ export const DayCell: React.FC<DayCellProps> = ({
   const onSubmit = async () => {
     if (!task.date || !task.title) return;
     try {
-      await createTask(task.title, task.date);
+      await createTask({
+        title: task.title,
+        date: task.date,
+      });
     } catch (error) {
       console.error("Error creating task:", error);
     }

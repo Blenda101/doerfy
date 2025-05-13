@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Task, TaskSchedule } from "../../../../types/task";
+import { Task, TaskSchedule, TaskSchema } from "../../../../types/task";
 import { loadTasks, saveTasks } from "../../../../utils/storage";
 import { createNewTask } from "../../../../utils/taskUtils";
 
@@ -8,7 +8,7 @@ interface UseTasksReturn {
   isLoading: boolean;
   error: Error | null;
   updateTask: (updatedTask: Task) => Promise<void>;
-  createTask: (title: string, date: Date) => Promise<Task>;
+  createTask: (properties: Partial<TaskSchema>) => Promise<Task>;
   moveTask: (taskId: string, newDate: Date) => Promise<void>;
 }
 
@@ -59,14 +59,19 @@ export const useTasks = (): UseTasksReturn => {
   };
 
   // Create a new task
-  const createTask = async (title: string, date: Date): Promise<Task> => {
+  const createTask = async (properties: Partial<TaskSchema>): Promise<Task> => {
     try {
-      const task = await createNewTask("personal", undefined, undefined, {
-        show_in_calendar: true,
-      });
+      const task = await createNewTask(
+        properties.title,
+        undefined,
+        undefined,
+        properties,
+      );
       const schedule: TaskSchedule = {
         enabled: true,
-        date: date,
+        date: properties.schedule_date
+          ? new Date(properties.schedule_date)
+          : null,
         time: "09:00",
         leadDays: 0,
         leadHours: 0,
@@ -74,7 +79,6 @@ export const useTasks = (): UseTasksReturn => {
       task.schedule = schedule;
 
       const updatedTasks = [task, ...tasks];
-      await saveTasks(updatedTasks);
       setTasks(updatedTasks);
       setError(null);
       return task;
