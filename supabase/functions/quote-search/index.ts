@@ -53,13 +53,17 @@ Deno.serve(async (req) => {
         tags: quote.tags || [],
       }));
     } else if (source === "zenquotes") {
-      const apiKey = Deno.env.get('ZENQUOTES_API_KEY');
-      if (!apiKey) {
-        throw new Error("ZenQuotes API key not configured");
-      }
+      // const apiKey = Deno.env.get('ZENQUOTES_API_KEY');
+      // if (!apiKey) {
+      //   throw new Error("ZenQuotes API key not configured");
+      // }
+
+      // const response = await fetch(
+      //   `https://zenquotes.io/api/search/${encodeURIComponent(query)}}`
+      // );
 
       const response = await fetch(
-        `https://zenquotes.io/api/search/${encodeURIComponent(query)}?apikey=${apiKey}`
+        `https://zenquotes.io/api/quotes/${encodeURIComponent(query)}`
       );
 
       if (!response.ok) {
