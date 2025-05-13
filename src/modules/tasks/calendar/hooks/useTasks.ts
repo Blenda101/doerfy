@@ -1,14 +1,20 @@
 import { useState, useEffect } from "react";
 import { Task, TaskSchedule } from "../../../../types/task";
 import { loadTasks, saveTasks } from "../../../../utils/storage";
-import { createNewTask } from "../../../../utils/taskUtils";
-
+import { getAuthenticatedUser } from "../../../../utils/auth";
+import { supabase } from "../../../../utils/supabaseClient";
+import { getTask } from "../../../../utils/task";
+import { getDateInterval } from "../utils/getDateInterval";
+import { mapTaskFromSupabase } from "../../../../utils/taskMapper";
 interface UseTasksReturn {
   tasks: Task[];
   isLoading: boolean;
   error: Error | null;
   updateTask: (updatedTask: Task) => Promise<void>;
-  createTask: (title: string, date: Date) => Promise<Task>;
+  createTask: (
+    title: string,
+    slot: { start: Date; end: Date },
+  ) => Promise<Task>;
   moveTask: (taskId: string, newDate: Date) => Promise<void>;
 }
 
@@ -48,8 +54,8 @@ export const useTasks = (): UseTasksReturn => {
       const updatedTasks = tasks.map((task) =>
         task.id === updatedTask.id ? updatedTask : task,
       );
-      await saveTasks(updatedTasks);
       setTasks(updatedTasks);
+      await saveTasks(updatedTasks);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err : new Error("Failed to update task"));
@@ -59,20 +65,38 @@ export const useTasks = (): UseTasksReturn => {
   };
 
   // Create a new task
-  const createTask = async (title: string, date: Date): Promise<Task> => {
+  const createTask = async (
+    title: string,
+    slot: { start: Date; end: Date },
+  ): Promise<Task> => {
     try {
-      const task = await createNewTask("personal", undefined, undefined, {
-        show_in_calendar: true,
-      });
-      const schedule: TaskSchedule = {
-        enabled: true,
-        date: date,
-        time: "09:00",
-        leadDays: 0,
-        leadHours: 0,
-      };
-      task.schedule = schedule;
+      const user = await getAuthenticatedUser();
+      const taskTitle = title.trim() || "New Task";
+      const { schedule_date, schedule_time, duration_days, duration_hours } =
+        getDateInterval(slot);
 
+      const { data, error } = await supabase
+        .from("tasks")
+        .insert(
+          getTask({
+            assignee: user.id,
+            created_by: user.id,
+            title: taskTitle,
+            show_in_calendar: true,
+            schedule_date,
+            schedule_time,
+            duration_days,
+            duration_hours,
+          }),
+        )
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      const task = mapTaskFromSupabase(data, user.id);
       const updatedTasks = [task, ...tasks];
       await saveTasks(updatedTasks);
       setTasks(updatedTasks);

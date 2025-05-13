@@ -3,7 +3,7 @@ import {
   Event as BigCalendarEvent,
   CalendarProps as BigCalendarProps,
 } from "react-big-calendar";
-import { Task, TaskSchedule } from "../../../types/task";
+import { Task, TaskSchedule, TaskSchema } from "../../../types/task";
 import { Theme } from "../../../utils/theme";
 
 // Props for the main Calendar component
@@ -55,7 +55,7 @@ export interface ToolbarProps {
 export interface DayCellProps {
   value: Date;
   children?: React.ReactNode;
-  createTask: (title: string, date: Date) => Promise<Task>;
+  createTask: (properties: Partial<TaskSchema>) => Promise<Task>;
   onAddTask: (date: Date) => void;
   newTask: NewTaskState;
   onNewTaskChange: (task: NewTaskState) => void;

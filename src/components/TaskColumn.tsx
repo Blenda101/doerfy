@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { InlineTaskEditor } from "./InlineTaskEditor";
-import { TimeBoxConfig } from './TimeBoxDialog';
+import { TimeBoxConfig } from "./TimeBoxDialog";
 
 import {
   DropdownMenu,
@@ -24,7 +24,7 @@ import {
 import { Task } from "../types/task";
 import { cn } from "../lib/utils";
 import { TaskHoverCard } from "./TaskHoverCard";
-import { validateTaskTitle } from "../utils/taskUtils";
+import { validateTaskTitle } from "../modules/tasks/lists/utils/taskUtils";
 
 interface TaskColumnProps {
   title: string;
@@ -133,16 +133,22 @@ export const TaskColumn: React.FC<TaskColumnProps> = ({
   const renderTaskIndicators = (task: Task) => {
     const leadDays = task.schedule?.leadDays || 0;
     const durationDays = task.schedule?.durationDays || 0;
-    
+
     return (
       <div className="flex items-center space-x-1 ml-2">
         {leadDays > 0 && (
-          <Badge variant="outline" className="bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300 rounded-full px-2 py-0.5 text-xs">
+          <Badge
+            variant="outline"
+            className="bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300 rounded-full px-2 py-0.5 text-xs"
+          >
             {leadDays}d
           </Badge>
         )}
         {durationDays > 0 && (
-          <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300 rounded-full px-2 py-0.5 text-xs">
+          <Badge
+            variant="outline"
+            className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300 rounded-full px-2 py-0.5 text-xs"
+          >
             {durationDays}d
           </Badge>
         )}
@@ -305,18 +311,30 @@ export const TaskColumn: React.FC<TaskColumnProps> = ({
                       className={cn(
                         "flex items-start mb-3 last:mb-0 relative p-1 rounded group",
                         "hover:bg-gray-50 dark:hover:bg-slate-700",
-                        task.agingStatus === "warning" && "bg-yellow-50 dark:bg-yellow-900/20",
-                        task.agingStatus === "overdue" && "bg-red-50 dark:bg-red-900/20",
+                        task.agingStatus === "warning" &&
+                          "bg-yellow-50 dark:bg-yellow-900/20",
+                        task.agingStatus === "overdue" &&
+                          "bg-red-50 dark:bg-red-900/20",
                       )}
                       onClick={() => onTaskSelect?.(task)}
                     >
-                      <div className={`${getTaskColor(task.icon)} text-sm mr-2`}>●</div>
+                      <div
+                        className={`${getTaskColor(task.icon)} text-sm mr-2`}
+                      >
+                        ●
+                      </div>
                       {editingTaskId === task.id ? (
                         <InlineTaskEditor
                           value={task.title}
-                          onChange={(value) => onTaskTitleUpdate?.(task.id, value)}
-                          onSave={() => onTaskTitleUpdate?.(task.id, task.title)}
-                          onCancel={() => onTaskTitleUpdate?.(task.id, task.title)}
+                          onChange={(value) =>
+                            onTaskTitleUpdate?.(task.id, value)
+                          }
+                          onSave={() =>
+                            onTaskTitleUpdate?.(task.id, task.title)
+                          }
+                          onCancel={() =>
+                            onTaskTitleUpdate?.(task.id, task.title)
+                          }
                           className="flex-1"
                         />
                       ) : (

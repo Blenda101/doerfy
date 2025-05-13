@@ -10,16 +10,16 @@ export const Timecell: React.FC<any> = ({
   position,
   onClose,
 }) => {
-  const [task, setTask] = useState<NewTaskState>({
+  const [task, setTask] = useState({
     title: "",
     start: start,
     end: end,
   });
 
   const onSubmit = async () => {
-    if (!task.date || !task.title) return;
+    if (!task.start || !task.title) return;
     try {
-      await createTask(task.title, task.date);
+      await createTask(task.title, task.start, task.end);
     } catch (error) {
       console.error("Error creating task:", error);
     }

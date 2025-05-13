@@ -12,7 +12,7 @@ import { FilterPanel } from "../../components/FilterPanel";
 import { PropertySheet } from "../../components/PropertySheet";
 import { PtbTimeBox } from "../PtbTimeBox/PtbTimeBox";
 import { TaskList } from "../TaskList/TaskList";
-import { Calendar } from "../../modules/tasks/calendar";
+import CalendarView from "../../modules/tasks/calendar";
 import { AddListDialog } from "../../components/AddListDialog";
 import {
   Theme,
@@ -161,23 +161,25 @@ export const Tasks: React.FC = () => {
     try {
       setIsLoading(true);
 
-      const scheduleData = updatedTask.schedule?.enabled ? {
-        schedule_date: updatedTask.schedule.date,
-        schedule_time: updatedTask.schedule.time,
-        lead_days: updatedTask.schedule.leadDays || 0,
-        lead_hours: updatedTask.schedule.leadHours || 0,
-        duration_days: updatedTask.schedule.durationDays || 0,
-        duration_hours: updatedTask.schedule.durationHours || 0,
-        recurring: updatedTask.schedule.recurring?.type || null,
-      } : {
-        schedule_date: null,
-        schedule_time: null,
-        lead_days: 0,
-        lead_hours: 0,
-        duration_days: 0,
-        duration_hours: 0,
-        recurring: null,
-      };
+      const scheduleData = updatedTask.schedule?.enabled
+        ? {
+            schedule_date: updatedTask.schedule.date,
+            schedule_time: updatedTask.schedule.time,
+            lead_days: updatedTask.schedule.leadDays || 0,
+            lead_hours: updatedTask.schedule.leadHours || 0,
+            duration_days: updatedTask.schedule.durationDays || 0,
+            duration_hours: updatedTask.schedule.durationHours || 0,
+            recurring: updatedTask.schedule.recurring?.type || null,
+          }
+        : {
+            schedule_date: null,
+            schedule_time: null,
+            lead_days: 0,
+            lead_hours: 0,
+            duration_days: 0,
+            duration_hours: 0,
+            recurring: null,
+          };
 
       const { error } = await supabase
         .from("tasks")
@@ -187,7 +189,7 @@ export const Tasks: React.FC = () => {
           timestage: updatedTask.timeStage,
           stage_entry_date: updatedTask.stageEntryDate,
           assignee: updatedTask.assignee,
-          list_id: updatedTask.list_id,
+          list_id: updatedTask.listId,
           priority: updatedTask.priority,
           energy: updatedTask.energy,
           location: updatedTask.location,
@@ -232,19 +234,23 @@ export const Tasks: React.FC = () => {
           createdAt: task.created_at,
           updatedAt: task.updated_at,
           createdBy: task.created_by,
-          schedule: task.schedule_date ? {
-            enabled: true,
-            date: new Date(task.schedule_date),
-            time: task.schedule_time || "",
-            leadDays: task.lead_days || 0,
-            leadHours: task.lead_hours || 0,
-            durationDays: task.duration_days || 0,
-            durationHours: task.duration_hours || 0,
-            recurring: task.recurring ? {
-              type: task.recurring,
-              interval: 1,
-            } : undefined,
-          } : undefined,
+          schedule: task.schedule_date
+            ? {
+                enabled: true,
+                date: new Date(task.schedule_date),
+                time: task.schedule_time || "",
+                leadDays: task.lead_days || 0,
+                leadHours: task.lead_hours || 0,
+                durationDays: task.duration_days || 0,
+                durationHours: task.duration_hours || 0,
+                recurring: task.recurring
+                  ? {
+                      type: task.recurring,
+                      interval: 1,
+                    }
+                  : undefined,
+              }
+            : undefined,
         })) || [];
 
       setTasks(transformedTasks);
@@ -375,7 +381,7 @@ export const Tasks: React.FC = () => {
                   />
                 </TabsContent>
                 <TabsContent value="calendar" className="flex-1 m-0">
-                  <Calendar
+                  <CalendarView
                     theme={theme}
                     onTaskSelect={(task) => setSelectedTask(task)}
                   />
