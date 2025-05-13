@@ -154,7 +154,7 @@ export const BannerManager: React.FC<BannerManagerProps> = ({
   const [config, setConfig] = useState<BannerConfig>(
     initialConfig || {
       images: [],
-      transitionTime: 5,
+      transitionTime: 6,
       audio: [],
       autoplay: false,
       volume: 50,
@@ -186,6 +186,13 @@ export const BannerManager: React.FC<BannerManagerProps> = ({
   const [newQuote, setNewQuote] = useState({ text: "", author: "" });
   const [audioSource, setAudioSource] = useState<"upload" | "apple_music" | "spotify">("upload");
   const [audioLink, setAudioLink] = useState("");
+
+  // Update config when initialConfig changes
+  useEffect(() => {
+    if (initialConfig) {
+      setConfig(initialConfig);
+    }
+  }, [initialConfig]);
 
   const handleSearch = async (page = 1) => {
     if (!searchQuery.trim()) {
@@ -704,7 +711,7 @@ export const BannerManager: React.FC<BannerManagerProps> = ({
 
                     {searchResults.length > 0 && (
                       <div className="space-y-4">
-                        <div className="h-[400px] overflow-y-auto">
+                        <div className="h-[300px] overflow-y-auto">
                           <div className="grid grid-cols-3 gap-4">
                             {searchResults.map((image) => (
                               <div
@@ -770,54 +777,6 @@ export const BannerManager: React.FC<BannerManagerProps> = ({
                   </div>
                 )}
 
-                {config.images.length > 0 && (
-                  <div className="mt-4 grid grid-cols-4 gap-4">
-                    {config.images.map((image, index) => (
-                      <div
-                        key={index}
-                        className={cn(
-                          "relative rounded-lg overflow-hidden group",
-                          "border",
-                          theme === "dark"
-                            ? "border-slate-600"
-                            : "border-gray-200",
-                        )}
-                      >
-                        <img
-                          src={image.url}
-                          alt={`Background ${index + 1}`}
-                          className="w-full h-32 object-cover"
-                        />
-                        <button
-                          onClick={() => {
-                            setConfig((prev) => ({
-                              ...prev,
-                              images: prev.images.filter((_, i) => i !== index),
-                            }));
-                          }}
-                          className={cn(
-                            "absolute top-2 right-2 p-1 rounded-full",
-                            "opacity-0 group-hover:opacity-100 transition-opacity",
-                            theme === "dark"
-                              ? "bg-slate-800 text-white hover:bg-slate-700"
-                              : "bg-white text-gray-600 hover:bg-gray-100",
-                          )}
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                        <div
-                          className={cn(
-                            "absolute bottom-0 left-0 right-0 p-2",
-                            "bg-gradient-to-t from-black/50 to-transparent",
-                          )}
-                        >
-                          <span className="text-white text-sm">{index + 1}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
                 <div className="mt-4">
                   <Label className={theme === "dark" ? "text-white" : undefined}>
                     Transition Time (seconds)
@@ -840,6 +799,78 @@ export const BannerManager: React.FC<BannerManagerProps> = ({
                     )}
                   />
                 </div>
+
+                {config.images.length > 0 && (
+                  <div className="mt-8">
+                    <h4
+                      className={cn(
+                        "text-lg font-semibold mb-4",
+                        theme === "dark" ? "text-white" : "text-gray-900",
+                      )}
+                    >
+                      Selected Images Gallery
+                    </h4>
+                    <div className="h-[450px] overflow-y-auto pr-4 pb-8">
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        {config.images.map((image, index) => (
+                          <div
+                            key={index}
+                            className={cn(
+                              "relative rounded-lg overflow-hidden group aspect-square",
+                              "border",
+                              theme === "dark"
+                                ? "border-slate-600"
+                                : "border-gray-200",
+                            )}
+                          >
+                            <img
+                              src={image.url}
+                              alt={`Gallery Image ${index + 1}`}
+                              className="w-full h-full object-cover"
+                            />
+                            <div
+                              className={cn(
+                                "absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100",
+                                "transition-opacity duration-200",
+                                "flex flex-col items-center justify-center p-4"
+                              )}
+                            >
+                              <div className="text-white text-center mb-4">
+                                <p className="text-sm font-medium">Image {index + 1}</p>
+                                <p className="text-xs opacity-75">Click to view full size</p>
+                              </div>
+                              <div className="flex space-x-2">
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    window.open(image.url, '_blank');
+                                  }}
+                                >
+                                  View
+                                </Button>
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setConfig((prev) => ({
+                                      ...prev,
+                                      images: prev.images.filter((_, i) => i !== index),
+                                    }));
+                                  }}
+                                >
+                                  Remove
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </TabsContent>
 
@@ -1388,7 +1419,7 @@ export const BannerManager: React.FC<BannerManagerProps> = ({
           <Button
             variant="outline"
             onClick={onClose}
-            className={theme === "dark" ? "border-slate-600 text-white" : "border-gray-300 text-gray-700"}
+            className={theme === "dark" ? "border-slate-300 text-primary" : "border-gray-300 text-primary"}
           >
             Cancel
           </Button>
