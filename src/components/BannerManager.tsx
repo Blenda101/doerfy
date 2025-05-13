@@ -38,6 +38,12 @@ import {
 import { Badge } from "./ui/badge";
 import { cn } from "../lib/utils";
 
+//@ts-ignore
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+//@ts-ignore
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+
 const imageCategories = [
   {
     name: "Nature & Landscapes",
@@ -148,7 +154,7 @@ export const BannerManager: React.FC<BannerManagerProps> = ({
   const [config, setConfig] = useState<BannerConfig>(
     initialConfig || {
       images: [],
-      transitionTime: 5,
+      transitionTime: 6,
       audio: [],
       autoplay: false,
       volume: 50,
@@ -181,14 +187,19 @@ export const BannerManager: React.FC<BannerManagerProps> = ({
   const [audioSource, setAudioSource] = useState<"upload" | "apple_music" | "spotify">("upload");
   const [audioLink, setAudioLink] = useState("");
 
+  // Update config when initialConfig changes
+  useEffect(() => {
+    if (initialConfig) {
+      setConfig(initialConfig);
+    }
+  }, [initialConfig]);
+
   const handleSearch = async (page = 1) => {
     if (!searchQuery.trim()) {
       toast.error("Please enter a search term");
       return;
     }
 
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
     if (!supabaseUrl) {
       toast.error("VITE_SUPABASE_URL is not configured");
@@ -265,8 +276,6 @@ export const BannerManager: React.FC<BannerManagerProps> = ({
       return;
     }
 
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
     if (!supabaseUrl) {
       toast.error("VITE_SUPABASE_URL is not configured");
@@ -570,15 +579,15 @@ export const BannerManager: React.FC<BannerManagerProps> = ({
                 >
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="upload" id="upload" />
-                    <Label htmlFor="upload">Upload</Label>
+                    <Label className={ theme === "dark" ? "text-white" : ""} htmlFor="upload">Upload</Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="pixabay" id="pixabay" />
-                    <Label htmlFor="pixabay">Pixabay</Label>
+                    <Label className={ theme === "dark" ? "text-white" : ""} htmlFor="pixabay">Pixabay</Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="unsplash" id="unsplash" />
-                    <Label htmlFor="unsplash">Unsplash</Label>
+                    <Label className={ theme === "dark" ? "text-white" : ""} htmlFor="unsplash">Unsplash</Label>
                   </div>
                 </RadioGroup>
 
@@ -670,7 +679,7 @@ export const BannerManager: React.FC<BannerManagerProps> = ({
                               checked={appendSearch}
                               onCheckedChange={setAppendSearch}
                             />
-                            <Label>Append tags to search</Label>
+                            <Label className={ theme === "dark" ? "text-white" : ""}>Append tags to search</Label>
                           </div>
                         </div>
                       </div>
@@ -702,7 +711,7 @@ export const BannerManager: React.FC<BannerManagerProps> = ({
 
                     {searchResults.length > 0 && (
                       <div className="space-y-4">
-                        <div className="h-[400px] overflow-y-auto">
+                        <div className="h-[300px] overflow-y-auto">
                           <div className="grid grid-cols-3 gap-4">
                             {searchResults.map((image) => (
                               <div
@@ -768,54 +777,6 @@ export const BannerManager: React.FC<BannerManagerProps> = ({
                   </div>
                 )}
 
-                {config.images.length > 0 && (
-                  <div className="mt-4 grid grid-cols-4 gap-4">
-                    {config.images.map((image, index) => (
-                      <div
-                        key={index}
-                        className={cn(
-                          "relative rounded-lg overflow-hidden group",
-                          "border",
-                          theme === "dark"
-                            ? "border-slate-600"
-                            : "border-gray-200",
-                        )}
-                      >
-                        <img
-                          src={image.url}
-                          alt={`Background ${index + 1}`}
-                          className="w-full h-32 object-cover"
-                        />
-                        <button
-                          onClick={() => {
-                            setConfig((prev) => ({
-                              ...prev,
-                              images: prev.images.filter((_, i) => i !== index),
-                            }));
-                          }}
-                          className={cn(
-                            "absolute top-2 right-2 p-1 rounded-full",
-                            "opacity-0 group-hover:opacity-100 transition-opacity",
-                            theme === "dark"
-                              ? "bg-slate-800 text-white hover:bg-slate-700"
-                              : "bg-white text-gray-600 hover:bg-gray-100",
-                          )}
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                        <div
-                          className={cn(
-                            "absolute bottom-0 left-0 right-0 p-2",
-                            "bg-gradient-to-t from-black/50 to-transparent",
-                          )}
-                        >
-                          <span className="text-white text-sm">{index + 1}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
                 <div className="mt-4">
                   <Label className={theme === "dark" ? "text-white" : undefined}>
                     Transition Time (seconds)
@@ -838,6 +799,78 @@ export const BannerManager: React.FC<BannerManagerProps> = ({
                     )}
                   />
                 </div>
+
+                {config.images.length > 0 && (
+                  <div className="mt-8">
+                    <h4
+                      className={cn(
+                        "text-lg font-semibold mb-4",
+                        theme === "dark" ? "text-white" : "text-gray-900",
+                      )}
+                    >
+                      Selected Images Gallery
+                    </h4>
+                    <div className="h-[450px] overflow-y-auto pr-4 pb-8">
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        {config.images.map((image, index) => (
+                          <div
+                            key={index}
+                            className={cn(
+                              "relative rounded-lg overflow-hidden group aspect-square",
+                              "border",
+                              theme === "dark"
+                                ? "border-slate-600"
+                                : "border-gray-200",
+                            )}
+                          >
+                            <img
+                              src={image.url}
+                              alt={`Gallery Image ${index + 1}`}
+                              className="w-full h-full object-cover"
+                            />
+                            <div
+                              className={cn(
+                                "absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100",
+                                "transition-opacity duration-200",
+                                "flex flex-col items-center justify-center p-4"
+                              )}
+                            >
+                              <div className="text-white text-center mb-4">
+                                <p className="text-sm font-medium">Image {index + 1}</p>
+                                <p className="text-xs opacity-75">Click to view full size</p>
+                              </div>
+                              <div className="flex space-x-2">
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    window.open(image.url, '_blank');
+                                  }}
+                                >
+                                  View
+                                </Button>
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setConfig((prev) => ({
+                                      ...prev,
+                                      images: prev.images.filter((_, i) => i !== index),
+                                    }));
+                                  }}
+                                >
+                                  Remove
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </TabsContent>
 
@@ -859,15 +892,15 @@ export const BannerManager: React.FC<BannerManagerProps> = ({
                 >
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="upload" id="upload" />
-                    <Label htmlFor="upload">Upload</Label>
+                    <Label className={ theme === "dark" ? "text-white" : ""} htmlFor="upload">Upload</Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="apple_music" id="apple_music" />
-                    <Label htmlFor="apple_music">Apple Music</Label>
+                    <Label className={ theme === "dark" ? "text-white" : ""} htmlFor="apple_music">Apple Music</Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="spotify" id="spotify" />
-                    <Label htmlFor="spotify">Spotify</Label>
+                    <Label className={ theme === "dark" ? "text-white" : ""} htmlFor="spotify">Spotify</Label>
                   </div>
                 </RadioGroup>
 
@@ -917,7 +950,7 @@ export const BannerManager: React.FC<BannerManagerProps> = ({
                         />
                         <Button
                           onClick={handleAudioLinkAdd}
-                          className={theme === "dark" && "bg-purple-600 hover:bg-purple-700"}
+                          className={theme === "dark" ? "bg-purple-600 hover:bg-purple-700" : "bg-blue-600 hover:bg-blue-700"}
                         >
                           Add
                         </Button>
@@ -1032,16 +1065,16 @@ export const BannerManager: React.FC<BannerManagerProps> = ({
                   className="flex space-x-4 mb-4"
                 >
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="custom" id="custom" />
-                    <Label htmlFor="custom">Custom</Label>
+                    <RadioGroupItem  value="custom" id="custom" />
+                    <Label className={ theme === "dark" ? "text-white" : ""} htmlFor="custom">Custom</Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="quotable" id="quotable" />
-                    <Label htmlFor="quotable">Quotable</Label>
+                    <Label className={ theme === "dark" ? "text-white" : ""} htmlFor="quotable">Quotable</Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="zenquotes" id="zenquotes" />
-                    <Label htmlFor="zenquotes">ZenQuotes</Label>
+                    <Label className={ theme === "dark" ? "text-white" : ""} htmlFor="zenquotes">ZenQuotes</Label>
                   </div>
                 </RadioGroup>
 
@@ -1081,7 +1114,7 @@ export const BannerManager: React.FC<BannerManagerProps> = ({
                     </div>
                     <Button
                       onClick={handleQuoteAdd}
-                      className={theme === "dark" && "bg-purple-600 hover:bg-purple-700"}
+                      className={theme === "dark" ? "bg-purple-600 hover:bg-purple-700" : "bg-blue-600 hover:bg-blue-700"}
                     >
                       Add Quote
                     </Button>
@@ -1151,7 +1184,7 @@ export const BannerManager: React.FC<BannerManagerProps> = ({
                               checked={appendSearch}
                               onCheckedChange={setAppendSearch}
                             />
-                            <Label>Append tags to search</Label>
+                            <Label className={ theme === "dark" ? "text-white" : ""} >Append tags to search</Label>
                           </div>
                         </div>
                       </div>
@@ -1237,7 +1270,7 @@ export const BannerManager: React.FC<BannerManagerProps> = ({
                                     <Badge
                                       key={tag}
                                       variant="secondary"
-                                      className={theme === "dark" && "bg-slate-600"}
+                                      className={theme === "dark" ? "bg-slate-600" : "bg-gray-200"}
                                     >
                                       {tag}
                                     </Badge>
@@ -1277,7 +1310,7 @@ export const BannerManager: React.FC<BannerManagerProps> = ({
                             <div>
                               <Label
                                 className={
-                                  theme === "dark" ? "text-white" : undefined
+                                  theme === "dark" ? "text-white" : "text-gray-900"
                                 }
                               >
                                 Quote Text
@@ -1291,8 +1324,7 @@ export const BannerManager: React.FC<BannerManagerProps> = ({
                                 placeholder="Enter quote text..."
                                 className={cn(
                                   "mt-1",
-                                  theme === "dark" &&
-                                    "bg-slate-800 border-slate-600 text-white",
+                                  theme === "dark" ? "bg-slate-800 border-slate-600 text-white" : "bg-slate-50 border-gray-200 text-gray-900",
                                 )}
                               />
                             </div>
@@ -1337,7 +1369,7 @@ export const BannerManager: React.FC<BannerManagerProps> = ({
 
                 <div className="mt-6 space-y-4">
                   <div className="flex items-center">
-                    <Label className={theme === "dark" ? "text-white" : undefined}>
+                    <Label className={theme === "dark" ? "text-white" : "text-gray-900"}>
                       Enable Quote Rotation
                     </Label>
                     <Switch
@@ -1387,13 +1419,13 @@ export const BannerManager: React.FC<BannerManagerProps> = ({
           <Button
             variant="outline"
             onClick={onClose}
-            className={theme === "dark" && "border-slate-600 text-white"}
+            className={theme === "dark" ? "border-slate-300 text-primary" : "border-gray-300 text-primary"}
           >
             Cancel
           </Button>
           <Button
             onClick={handleSave}
-            className={theme === "dark" && "bg-purple-600 hover:bg-purple-700"}
+            className={theme === "dark" ? "bg-purple-600 hover:bg-purple-700" : "bg-purple-500 hover:bg-purple-600"}
           >
             Save Changes
           </Button>
