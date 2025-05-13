@@ -153,7 +153,7 @@ export const Home: React.FC = () => {
 
   // Image transition effect
   useEffect(() => {
-    if (bannerConfig?.images?.length && bannerConfig.images.length > 1) {
+    if (bannerConfig?.images?.length && bannerConfig.images.length > 0) {
       const transitionTime = (bannerConfig.transitionTime || 5) * 1000;
 
       imageIntervalRef.current = window.setInterval(() => {

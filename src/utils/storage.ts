@@ -171,31 +171,56 @@ export async function saveBannerConfig(config: BannerConfig): Promise<void> {
       data: { user },
       error: userError,
     } = await supabase.auth.getUser();
+
     if (userError || !user) {
       throw new Error("No authenticated user found");
     }
 
-    const { error } = await supabase.from("banner_configs").upsert(
-      {
-        user_id: user.id,
-        images: config.images,
-        transition_time: config.transitionTime,
-        audio: config.audio,
-        autoplay: config.autoplay,
-        volume: config.volume,
-        quotes: config.quotes,
-        quote_rotation: config.quoteRotation,
-        quote_duration: config.quoteDuration,
-        text_style: config.textStyle,
-        updated_at: new Date().toISOString(),
-      },
-      {
-        onConflict: "user_id",
-      },
-    );
+    // Fetch the existing config to preserve fields not present in the new config
+    const { data: existingConfigs, error: fetchError } = await supabase
+      .from("banner_configs")
+      .select("*")
+      .eq("user_id", user.id)
+      .single();
 
-    if (error) {
-      throw error;
+    if (fetchError && fetchError.code !== "PGRST116") {
+      // PGRST116 = no rows found, which is okay for a new insert
+      throw fetchError;
+    }
+
+    const existingConfig = existingConfigs || {};
+
+    function mergeUniqueByKey<T>(arr1: T[] = [], arr2: T[] = [], key: keyof T): T[] {
+      const map = new Map<string | number, T>();
+      [...arr1, ...arr2].forEach(item => {
+        const keyValue = item[key];
+        map.set(keyValue as string | number, item);
+      });
+      return Array.from(map.values());
+    }
+    
+    const mergedConfig = {
+      user_id: user.id,
+      images: mergeUniqueByKey(existingConfig.images, config.images, "url"),
+      transition_time: config.transitionTime ?? existingConfig.transition_time,
+      audio: mergeUniqueByKey(existingConfig.audio, config.audio, "url"),
+      autoplay: config.autoplay ?? existingConfig.autoplay,
+      volume: config.volume ?? existingConfig.volume,
+      quotes: mergeUniqueByKey(existingConfig.quotes, config.quotes, "text"), // adjust if key is different
+      quote_rotation: config.quoteRotation ?? existingConfig.quote_rotation,
+      quote_duration: config.quoteDuration ?? existingConfig.quote_duration,
+      text_style: config.textStyle ?? existingConfig.text_style,
+      updated_at: new Date().toISOString(),
+    };
+
+    const { error: upsertError } = await supabase
+      .from("banner_configs")
+      .upsert(mergedConfig, {
+        onConflict: "user_id",
+      });
+
+    if (upsertError) {
+      throw upsertError;
     }
   } catch (error) {
     console.error("Error saving banner config:", error);
@@ -218,6 +243,9 @@ export async function loadBannerConfig(): Promise<BannerConfig | null> {
       .select("*")
       .eq("user_id", user.id)
       .single();
+
+    console.log("Banner config loaded:", config);
+    console.log({ config });
 
     if (error) {
       throw error;
