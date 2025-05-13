@@ -8,18 +8,15 @@ import {
 import { format, parse, startOfWeek, getDay } from "date-fns";
 import { enUS } from "date-fns/locale";
 import { cn } from "../../../lib/utils";
-import { CalendarProps, CalendarEvent, NewTaskState } from "./types";
+import { CalendarProps, CalendarEvent } from "./types";
 import { CustomEvent } from "./partials/CustomEvent";
 import { CustomToolbar } from "./partials/CustomToolbar";
-import { DayCell } from "./partials/DayCell";
 import { useTasks } from "./hooks/useTasks";
-import { Timecell } from "./partials/Timecell";
+import withDragAndDrop from "react-big-calendar/lib/addons/dragAndDrop";
 
-// Configure date-fns localizer for react-big-calendar
 const locales = {
   "en-US": enUS,
 };
-
 const localizer = dateFnsLocalizer({
   format,
   parse,
@@ -27,72 +24,15 @@ const localizer = dateFnsLocalizer({
   getDay,
   locales,
 });
+const Calendar = withDragAndDrop(BigCalendar);
 
-/**
- * Main Calendar component that integrates all calendar functionality
- * Handles task management, event rendering, and calendar interactions
- */
-export const Calendar: React.FC<CalendarProps> = ({
-  theme = "light",
-  onTaskSelect,
-}) => {
-  const { tasks, isLoading, error, createTask, moveTask } = useTasks();
+const CalendarView: React.FC<CalendarProps> = (props) => {
+  const { theme = "light", onTaskSelect } = props;
+  const { tasks, isLoading, error } = useTasks();
   const [view, setView] = useState<View>(Views.MONTH);
   const [date, setDate] = useState(new Date());
-  const [newTask, setNewTask] = useState<NewTaskState>({
-    date: null,
-    isEditing: false,
-    title: "",
-  });
 
   const calendarRef = useRef<HTMLDivElement>(null);
-  const [slotPopoverOpen, setSlotPopoverOpen] = useState(false);
-  const [slotPopoverData, setSlotPopoverData] = useState<{
-    start: Date;
-    end: Date;
-    position: { top: number; left: number };
-  } | null>(null);
-
-  // Handle task drag and drop
-  const handleEventDrop = async ({ event, start }: any) => {
-    try {
-      await moveTask(event.task.id, start);
-    } catch (error) {
-      console.error("Error moving task:", error);
-    }
-  };
-
-  // Handle adding a new task
-  const handleAddTask = (date: Date) => {
-    setNewTask({
-      date,
-      isEditing: true,
-      title: "",
-    });
-  };
-
-  // Save a new task
-  const handleNewTaskSave = async () => {
-    if (!newTask.date || !newTask.title.trim()) {
-      setNewTask({
-        date: null,
-        isEditing: false,
-        title: "",
-      });
-      return;
-    }
-
-    try {
-      await createTask(newTask.title.trim(), newTask.date);
-      setNewTask({
-        date: null,
-        isEditing: false,
-        title: "",
-      });
-    } catch (error) {
-      console.error("Error creating new task:", error);
-    }
-  };
 
   // Convert tasks to calendar events
   const events: CalendarEvent[] = tasks
@@ -113,7 +53,6 @@ export const Calendar: React.FC<CalendarProps> = ({
     return <div>Error: {error.message}</div>;
   }
 
-  console.log({ events, tasks });
   return (
     <div className="relative flex-1 p-6" ref={calendarRef}>
       <BigCalendar<CalendarEvent>
@@ -122,6 +61,7 @@ export const Calendar: React.FC<CalendarProps> = ({
         startAccessor="start"
         endAccessor="end"
         style={{ height: "calc(100vh - 160px)" }}
+        defaultView={Views.DAY}
         views={[Views.MONTH, Views.WEEK, Views.DAY]}
         view={view}
         onView={setView}
@@ -137,36 +77,8 @@ export const Calendar: React.FC<CalendarProps> = ({
               theme={theme}
             />
           ),
-          dateCellWrapper: (props) => (
-            <DayCell
-              {...props}
-              createTask={createTask}
-              onAddTask={handleAddTask}
-              newTask={newTask}
-              onNewTaskChange={setNewTask}
-              onNewTaskSave={handleNewTaskSave}
-            />
-          ),
         }}
         onSelectEvent={(event: CalendarEvent) => onTaskSelect(event.task)}
-        onSelectSlot={(slotInfo) => {
-          const { start, end, bounds } = slotInfo;
-
-          if (bounds && calendarRef.current) {
-            const containerRect = calendarRef.current.getBoundingClientRect();
-
-            setSlotPopoverData({
-              start,
-              end,
-              position: {
-                top: bounds.top - containerRect.top,
-                left: bounds.left - containerRect.left,
-              },
-            });
-
-            setSlotPopoverOpen(true);
-          }
-        }}
         className={cn(
           "rounded-lg border",
           theme === "dark"
@@ -175,16 +87,8 @@ export const Calendar: React.FC<CalendarProps> = ({
         )}
         selectable
       />
-      {slotPopoverData && (
-        <Timecell
-          open={slotPopoverOpen}
-          start={slotPopoverData.start}
-          end={slotPopoverData.end}
-          position={slotPopoverData.position}
-          createTask={createTask}
-          onClose={() => setSlotPopoverOpen(false)}
-        />
-      )}
     </div>
   );
 };
+
+export { CalendarView };
