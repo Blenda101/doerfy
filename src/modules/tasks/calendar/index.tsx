@@ -4,6 +4,7 @@ import {
   dateFnsLocalizer,
   Views,
   View,
+  SlotInfo,
 } from "react-big-calendar";
 import { format, parse, startOfWeek, getDay } from "date-fns";
 import { enUS } from "date-fns/locale";
@@ -64,7 +65,7 @@ const CalendarView: React.FC<CalendarProps> = (props) => {
 
   console.log({ events, tasks });
 
-  const handleSelectSlot = ({ start, end }: { start: Date; end: Date }) => {
+  const handleSelectSlot = ({ start, end }: SlotInfo) => {
     setSelectedSlot({ start, end });
     setIsDialogOpen(true);
   };
@@ -73,17 +74,7 @@ const CalendarView: React.FC<CalendarProps> = (props) => {
     if (!selectedSlot || !newTaskTitle.trim()) return;
 
     try {
-      const { schedule_date, schedule_time, duration_days, duration_hours } =
-        getDateInterval(selectedSlot);
-
-      await createTask({
-        title: newTaskTitle.trim(),
-        schedule_date,
-        schedule_time,
-        duration_days,
-        duration_hours,
-        show_in_calendar: true,
-      });
+      await createTask(newTaskTitle.trim(), selectedSlot);
       setNewTaskTitle("");
       setIsDialogOpen(false);
     } catch (error) {

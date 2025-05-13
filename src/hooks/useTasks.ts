@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "../utils/supabaseClient";
 import { Task } from "../types/task";
 import { toast } from "react-hot-toast";
-import { createNewTask } from "../utils/taskUtils";
+import { createNewTask } from "../modules/tasks/lists/utils/taskUtils";
 import { List } from "./useLists";
 
 interface UseTasksProps {
@@ -139,7 +139,7 @@ export const useTasks = ({ lists }: UseTasksProps): UseTasksReturn => {
     if (editingTaskId !== task.id) {
       setSelectedTask(task);
       setEditingTaskId(null);
-      setActiveList(task.list_id || null);
+      setActiveList(task.listId || null);
     }
   };
 
@@ -152,7 +152,7 @@ export const useTasks = ({ lists }: UseTasksProps): UseTasksReturn => {
           description: updatedTask.description,
           timestage: updatedTask.timeStage,
           stage_entry_date: updatedTask.stageEntryDate,
-          list_id: updatedTask.list_id,
+          list_id: updatedTask.listId,
           priority: updatedTask.priority,
           energy: updatedTask.energy,
           location: updatedTask.location,

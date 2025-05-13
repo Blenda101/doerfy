@@ -102,7 +102,7 @@ export interface Task {
   comments: any[];
   attachments: any[];
   history: TaskHistoryItem[];
-  schedule?: TaskSchedule;
+  schedule: TaskSchedule | null;
 }
 
 // export interface Task {
@@ -180,35 +180,3 @@ export const SCHEDULING_THRESHOLDS = {
 export function generateTaskId(): string {
   return crypto.randomUUID();
 }
-
-export type TaskSchema = {
-  id: string;
-  title: string;
-  description: string;
-  timestage: string;
-  stage_entry_date: string;
-  assignee: string;
-  list_id: string;
-  priority: string;
-  energy: string;
-  location: string | null;
-  story: string | null;
-  labels: string[];
-  icon: string;
-  highlighted: boolean;
-  status: string | null;
-  aging_status: string | null;
-  created_at: string;
-  updated_at: string;
-  created_by: string;
-  show_in_time_box: boolean;
-  show_in_list: boolean;
-  show_in_calendar: boolean;
-  schedule_date: string | null;
-  schedule_time: string | null;
-  lead_days: number;
-  lead_hours: number;
-  duration_days: number;
-  duration_hours: number;
-  recurring: RecurringPattern | null;
-};

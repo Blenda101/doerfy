@@ -1,14 +1,20 @@
 import { useState, useEffect } from "react";
-import { Task, TaskSchedule, TaskSchema } from "../../../../types/task";
+import { Task, TaskSchedule } from "../../../../types/task";
 import { loadTasks, saveTasks } from "../../../../utils/storage";
-import { createNewTask } from "../../../../utils/taskUtils";
-
+import { getAuthenticatedUser } from "../../../../utils/auth";
+import { supabase } from "../../../../utils/supabaseClient";
+import { getTask } from "../../../../utils/task";
+import getDateInterval from "../utils/getDateInterval";
+import { mapTaskFromSupabase } from "../../../../utils/taskMapper";
 interface UseTasksReturn {
   tasks: Task[];
   isLoading: boolean;
   error: Error | null;
   updateTask: (updatedTask: Task) => Promise<void>;
-  createTask: (properties: Partial<TaskSchema>) => Promise<Task>;
+  createTask: (
+    title: string,
+    slot: { start: Date; end: Date },
+  ) => Promise<Task>;
   moveTask: (taskId: string, newDate: Date) => Promise<void>;
 }
 
@@ -59,26 +65,56 @@ export const useTasks = (): UseTasksReturn => {
   };
 
   // Create a new task
-  const createTask = async (properties: Partial<TaskSchema>): Promise<Task> => {
+  const createTask = async (
+    title: string,
+    slot: { start: Date; end: Date },
+  ): Promise<Task> => {
     try {
-      const task = await createNewTask(
-        properties.title,
-        undefined,
-        undefined,
-        properties,
-      );
-      const schedule: TaskSchedule = {
-        enabled: true,
-        date: properties.schedule_date
-          ? new Date(properties.schedule_date)
-          : null,
-        time: properties.schedule_time || "09:00",
-        leadDays: properties.duration_days || 0,
-        leadHours: properties.duration_hours || 0,
-      };
-      task.schedule = schedule;
+      const user = await getAuthenticatedUser();
+      const taskTitle = title.trim() || "New Task";
+      const { schedule_date, schedule_time, duration_days, duration_hours } =
+        getDateInterval(slot);
+
+      const { data, error } = await supabase
+        .from("tasks")
+        .insert(
+          getTask({
+            assignee: user.id,
+            created_by: user.id,
+            title: taskTitle,
+            show_in_calendar: true,
+            schedule_date,
+            schedule_time,
+            duration_days,
+            duration_hours,
+          }),
+        )
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      const task = mapTaskFromSupabase(data, user.id);
+
+      // const task = await createNewTask(
+      //   properties.title,
+      //   undefined,
+      //   undefined,
+      //   properties,
+      // );
+      // const schedule: TaskSchedule = {
+      //   enabled: true,
+      //   date: properties.schedule ? new Date(properties.schedule_date) : null,
+      //   time: properties.schedule_time || "09:00",
+      //   leadDays: properties.duration_days || 0,
+      //   leadHours: properties.duration_hours || 0,
+      // };
+      // task.schedule = schedule;
 
       const updatedTasks = [task, ...tasks];
+      await saveTasks(updatedTasks);
       setTasks(updatedTasks);
       setError(null);
       return task;

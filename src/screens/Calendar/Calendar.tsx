@@ -17,7 +17,7 @@ import { loadTasks, saveTasks } from "../../utils/storage";
 import { cn } from "../../lib/utils";
 import { Theme } from "../../utils/theme";
 import { Plus } from "lucide-react";
-import { createNewTask } from "../../utils/taskUtils";
+import { createNewTask } from "../../modules/tasks/lists/utils/taskUtils";
 import { List } from "../../hooks/useLists";
 import { Story } from "../../types/story";
 

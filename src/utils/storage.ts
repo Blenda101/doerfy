@@ -124,6 +124,19 @@ export async function loadTasks(): Promise<Task[]> {
       comments: [],
       attachments: [],
       history: [],
+      schedule: task.show_in_calendar
+        ? {
+            enabled: true,
+            date: task.schedule_date ? new Date(task.schedule_date) : null,
+            time: task.schedule_time || "09:00",
+            leadDays: task.lead_days,
+            leadHours: task.lead_hours,
+            durationDays: task.duration_days,
+            durationHours: task.duration_hours,
+            alarmEnabled: false,
+            recurring: undefined,
+          }
+        : null,
     }));
   } catch (error) {
     console.error("Error loading tasks from Supabase:", error);
