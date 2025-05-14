@@ -1,8 +1,12 @@
+import { Database } from "./supabase";
+
 export type TimeStage = "queue" | "do" | "doing" | "today" | "done";
 export type Priority = "high" | "medium" | "low";
 export type Energy = "high" | "medium" | "low";
 export type AgingStatus = "normal" | "warning" | "overdue";
-export type RecurringPattern = "daily" | "weekly" | "monthly" | "yearly";
+export type RecurringPattern = Database["public"]["Enums"]["recurring_pattern"];
+export type WeekDays = Database["public"]["Enums"]["week_days"];
+export type EndsType = Database["public"]["Enums"]["ends_type"];
 
 export interface ChecklistItem {
   id: string;
@@ -20,7 +24,7 @@ export interface TaskHistoryItem {
 export interface TaskSchedule {
   enabled: boolean;
   date: Date | null;
-  time: string;
+  time: string | null;
   leadDays?: number;
   leadHours?: number;
   durationDays?: number;
@@ -29,51 +33,17 @@ export interface TaskSchedule {
   recurring?: {
     type: RecurringPattern;
     interval: number;
-    weekDays?: string[];
-    monthDay?: number;
-    monthWeek?: "1st" | "2nd" | "3rd" | "4th" | "last";
-    monthWeekDay?: string;
+    weekDays?: WeekDays[];
     workdaysOnly?: boolean;
     ends?: {
-      type: "date" | "occurrences" | "endless";
+      type: EndsType;
       date?: Date;
       occurrences?: number;
     };
   };
 }
 
-export type TaskFromSupabase = {
-  id: string;
-  title: string;
-  description: string;
-  timestage: TimeStage;
-  stage_entry_date: string;
-  assignee: string;
-  priority: Priority;
-  energy: Energy;
-  location: string | null;
-  story: string | null;
-  labels: string[];
-  icon: string;
-  highlighted: boolean;
-  status?: string;
-  aging_status?: AgingStatus;
-  created_at: string;
-  updated_at: string;
-  created_by: string;
-  show_in_time_box: boolean;
-  show_in_list: boolean;
-  show_in_calendar: boolean;
-  story_id: string | null;
-  list_id: string | null;
-  schedule_date: string;
-  schedule_time: string;
-  lead_days: number;
-  lead_hours: number;
-  duration_days: number;
-  duration_hours: number;
-  recurring: RecurringPattern | null;
-};
+export type TaskFromSupabase = Database["public"]["Tables"]["tasks"]["Row"];
 
 export interface Task {
   id: string;

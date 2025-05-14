@@ -20,12 +20,7 @@ import {
 } from "./ui/tooltip";
 import { format } from "date-fns";
 import DatePicker from "react-datepicker";
-import {
-  CalendarIcon,
-  Clock,
-  Bell,
-  HelpCircle,
-} from "lucide-react";
+import { CalendarIcon, Clock, Bell, HelpCircle } from "lucide-react";
 import { TaskSchedule } from "../types/task";
 import { cn } from "../lib/utils";
 
@@ -64,7 +59,7 @@ export const TaskScheduler: React.FC<TaskSchedulerProps> = ({
         schedule || {
           enabled: true,
           date: new Date(),
-          time: "",
+          time: null,
           leadDays: 0,
           leadHours: 0,
           durationDays: 0,
@@ -275,7 +270,7 @@ export const TaskScheduler: React.FC<TaskSchedulerProps> = ({
                       "dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200",
                     )}
                     placeholder="Set Time"
-                    value={currentSchedule.time}
+                    value={currentSchedule.time || ""}
                     onChange={(e) => handleTimeChange(e.target.value)}
                   />
                   <Clock className="absolute left-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500 dark:text-slate-400" />

@@ -3,7 +3,6 @@ import {
   TimeStage,
   Energy,
   AgingStatus,
-  Task,
 } from "../types/task";
 
 export function getTask(data: Partial<TaskFromSupabase>): TaskFromSupabase {
@@ -39,6 +38,14 @@ export function getTask(data: Partial<TaskFromSupabase>): TaskFromSupabase {
     duration_days: 0,
     duration_hours: 0,
     recurring: null,
+    status: null,
+    recurring_interval: null,
+    week_days: null,
+    workdays_only: false,
+    ends_type: "never",
+    ends_date: null,
+    ends_after_occurrences: null,
+    alarm_enabled: false,
     ...data,
   };
 }

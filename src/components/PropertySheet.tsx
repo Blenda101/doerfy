@@ -48,6 +48,8 @@ export const PropertySheet: React.FC<PropertySheetProps> = ({
   const [isSchedulerOpen, setIsSchedulerOpen] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
+  console.log(task);
+
   useEffect(() => {
     const loadAvatar = async () => {
       try {

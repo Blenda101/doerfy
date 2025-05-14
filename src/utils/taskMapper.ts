@@ -1,4 +1,12 @@
-import { Task, TaskFromSupabase, RecurringPattern } from "../types/task";
+import {
+  Task,
+  TaskFromSupabase,
+  RecurringPattern,
+  Priority,
+  TimeStage,
+  Energy,
+  AgingStatus,
+} from "../types/task";
 
 export function mapTaskFromSupabase(
   data: TaskFromSupabase,
@@ -7,25 +15,25 @@ export function mapTaskFromSupabase(
   return {
     id: data.id,
     title: data.title,
-    description: data.description,
-    timeStage: data.timestage,
+    description: data.description ?? "",
+    timeStage: data.timestage as TimeStage,
     stageEntryDate: data.stage_entry_date,
     assignee: data.assignee,
     listId: data.list_id,
-    priority: data.priority,
-    energy: data.energy,
+    priority: data.priority as Priority,
+    energy: data.energy as Energy,
     location: data.location,
     story: data.story,
     labels: data.labels || [],
-    icon: data.icon,
+    icon: data.icon ?? "",
     showInTimeBox: data.show_in_time_box ?? true,
     showInList: data.show_in_list ?? true,
     showInCalendar: data.show_in_calendar ?? false,
-    highlighted: data.highlighted,
-    status: data.status,
-    agingStatus: data.aging_status,
-    createdAt: data.created_at,
-    updatedAt: data.updated_at,
+    highlighted: data.highlighted ?? false,
+    status: data.status ?? undefined,
+    agingStatus: data.aging_status as AgingStatus,
+    createdAt: data.created_at ?? "",
+    updatedAt: data.updated_at ?? "",
     createdBy: data.created_by,
     schedule: data.schedule_date
       ? {
@@ -49,7 +57,7 @@ export function mapTaskFromSupabase(
     attachments: [],
     history: [
       {
-        timeStage: data.timestage,
+        timeStage: data.timestage as TimeStage,
         entryDate: data.stage_entry_date,
         userId: userId,
       },

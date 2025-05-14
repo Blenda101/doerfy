@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { source, query } = await req.json() as SearchRequest;
+    const { source, query } = (await req.json()) as SearchRequest;
 
     if (!query) {
       throw new Error("Search query is required");
@@ -37,20 +37,26 @@ Deno.serve(async (req) => {
     let results: QuoteResult[] = [];
 
     if (source === "quotable") {
+      const quoteApiKey = Deno.env.get("QUOTES4_API_KEY");
+      if (!quoteApiKey) {
+        throw new Error("Quotable API key not configured");
+      }
+
       const response = await fetch(
-        `https://famous-quotes4.p.rapidapi.com/random?count=20&category=${encodeURIComponent(query)}`,
+        `https://famous-quotes4.p.rapidapi.com/random?count=20&category=${encodeURIComponent(
+          query,
+        )}`,
         {
           headers: {
-            'x-rapidapi-key': '71ee726678msh59cc6c8ad2811e6p19f45ejsn6562254572de',
-            'x-rapidapi-host': 'famous-quotes4.p.rapidapi.com'
-          }
-        }
+            "x-rapidapi-key": quoteApiKey,
+            "x-rapidapi-host": "famous-quotes4.p.rapidapi.com",
+          },
+        },
       );
-      
 
       if (!response.ok) {
         throw new Error(`Quotable API error: ${response.statusText}`);
-      } 
+      }
       const data = await response.json();
       results = data.map((quote: any) => ({
         id: quote.id,
@@ -58,7 +64,6 @@ Deno.serve(async (req) => {
         author: quote.author,
         tags: quote.category ? [quote.category] : [],
       }));
-
     } else if (source === "zenquotes") {
       // const apiKey = Deno.env.get('ZENQUOTES_API_KEY');
       // if (!apiKey) {
@@ -70,7 +75,7 @@ Deno.serve(async (req) => {
       // );
 
       const response = await fetch(
-        `https://zenquotes.io/api/quotes/${encodeURIComponent(query)}`
+        `https://zenquotes.io/api/quotes/${encodeURIComponent(query)}`,
       );
 
       if (!response.ok) {
@@ -86,21 +91,21 @@ Deno.serve(async (req) => {
       }));
     }
 
-    return new Response(
-      JSON.stringify({ results }),
-      {
-        headers: {
-          "Content-Type": "application/json",
-          ...corsHeaders,
-        },
-      }
-    );
+    return new Response(JSON.stringify({ results }), {
+      headers: {
+        "Content-Type": "application/json",
+        ...corsHeaders,
+      },
+    });
   } catch (error) {
     console.error("Error in quote search:", error);
-    
+
     return new Response(
       JSON.stringify({
-        error: error instanceof Error ? error.message : "An error occurred during quote search",
+        error:
+          error instanceof Error
+            ? error.message
+            : "An error occurred during quote search",
       }),
       {
         status: 500,
@@ -108,7 +113,7 @@ Deno.serve(async (req) => {
           "Content-Type": "application/json",
           ...corsHeaders,
         },
-      }
+      },
     );
   }
 });
