@@ -25,6 +25,13 @@ import { Task } from "../types/task";
 import { cn } from "../lib/utils";
 import { TaskHoverCard } from "./TaskHoverCard";
 import { validateTaskTitle } from "../modules/tasks/lists/utils/taskUtils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "./ui/tooltip";
+import ScheduleInfo from "./ScheduleInfo";
 
 interface TaskColumnProps {
   title: string;
@@ -353,7 +360,9 @@ export const TaskColumn: React.FC<TaskColumnProps> = ({
                               >
                                 {task.title}
                               </span>
-                              {renderTaskIndicators(task)}
+                              {task.schedule ? (
+                                <ScheduleInfo schedule={task.schedule} />
+                              ) : null}
                             </div>
                             {task.status && (
                               <span className="text-xs text-gray-500 dark:text-gray-400">
