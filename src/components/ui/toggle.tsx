@@ -15,7 +15,7 @@ const ToggleOption = (props: ToggleOptionProps) => {
     <button
       className={`flex items-center justify-center px-5 py-1.5 text-sm rounded-full flex-1 transition-colors duration-200 z-10 relative ${
         isActive
-          ? "text-gray-800 font-medium"
+          ? "text-theme-light dark:text-theme-dark"
           : "text-gray-500 hover:text-gray-700"
       }`}
       onClick={onClick}

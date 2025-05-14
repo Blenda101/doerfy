@@ -321,23 +321,17 @@ export const Tasks: React.FC = () => {
                 {
                   value: "timebox",
                   label: "Time",
-                  icon: (
-                    <Filter className="text-theme-light dark:text-theme-dark" />
-                  ),
+                  icon: <Filter />,
                 },
                 {
                   value: "lists",
                   label: "Lists",
-                  icon: (
-                    <ListIcon className="text-theme-light dark:text-theme-dark" />
-                  ),
+                  icon: <ListIcon />,
                 },
                 {
                   value: "calendar",
                   label: "Calendar",
-                  icon: (
-                    <CalendarIcon className="text-theme-light dark:text-theme-dark" />
-                  ),
+                  icon: <CalendarIcon />,
                 },
               ]}
               activeOption={activeTab}

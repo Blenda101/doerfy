@@ -216,7 +216,10 @@ export const Stories: React.FC = () => {
   const getHeaderProps = () => ({
     title: "Stories",
     icon: <BookOpen />,
-    onAddItem: () => setIsWriteStoriesOpen(true),
+    onAddItem: () => {
+      setSelectedStory(null);
+      setIsWriteStoriesOpen(true);
+    },
     addItemLabel: "Write Story",
   });
 
@@ -247,23 +250,17 @@ export const Stories: React.FC = () => {
                 {
                   value: "grid",
                   label: "Grid",
-                  icon: (
-                    <BookOpen className="text-theme-light dark:text-theme-dark" />
-                  ),
+                  icon: <BookOpen />,
                 },
                 {
                   value: "flow",
                   label: "Flow",
-                  icon: (
-                    <Share2 className="text-theme-light dark:text-theme-dark" />
-                  ),
+                  icon: <Share2 />,
                 },
                 {
                   value: "list",
                   label: "List",
-                  icon: (
-                    <List className="text-theme-light dark:text-theme-dark" />
-                  ),
+                  icon: <List />,
                 },
               ]}
               activeOption={view}
@@ -295,7 +292,10 @@ export const Stories: React.FC = () => {
                       key={story.id}
                       story={story}
                       theme={theme}
-                      onView={setSelectedStory}
+                      onView={(story) => {
+                        setSelectedStory(story);
+                        setIsWriteStoriesOpen(false);
+                      }}
                       onDuplicate={handleStoryDuplicate}
                       onDelete={handleStoryDelete}
                       onFilterByChildren={setFilterParent}
@@ -306,13 +306,19 @@ export const Stories: React.FC = () => {
                 <StoriesFlow
                   stories={stories}
                   theme={theme}
-                  onStorySelect={setSelectedStory}
+                  onStorySelect={(story) => {
+                    setSelectedStory(story);
+                    setIsWriteStoriesOpen(false);
+                  }}
                 />
               ) : (
                 <StoryTable
                   stories={stories}
                   theme={theme}
-                  onView={setSelectedStory}
+                  onView={(story) => {
+                    setSelectedStory(story);
+                    setIsWriteStoriesOpen(false);
+                  }}
                   onDuplicate={handleStoryDuplicate}
                   onDelete={handleStoryDelete}
                   onFilterByChildren={setFilterParent}

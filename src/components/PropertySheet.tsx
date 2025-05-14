@@ -80,7 +80,7 @@ export const PropertySheet: React.FC<PropertySheetProps> = ({
     debounce((updatedTask: Task) => {
       onTaskUpdate(updatedTask);
     }, 700),
-    [onTaskUpdate]
+    [onTaskUpdate],
   );
 
   const handleTaskUpdate = (updates: Partial<Task>) => {
@@ -326,12 +326,12 @@ export const PropertySheet: React.FC<PropertySheetProps> = ({
 
               <EditableProperty
                 label="List"
-                value={lists.find(l => l.id === task.list_id)?.name || "None"}
+                value={lists.find((l) => l.id === task.listId)?.name || "None"}
                 options={lists.map((list) => ({
                   value: list.id,
                   label: list.name,
                 }))}
-                onChange={(value) => handleTaskUpdate({ list_id: value })}
+                onChange={(value) => handleTaskUpdate({ listId: value })}
                 disabled={lists.length === 0}
               />
 
@@ -374,7 +374,9 @@ export const PropertySheet: React.FC<PropertySheetProps> = ({
 
               <EditableProperty
                 label="Story"
-                value={stories.find(s => s.id === task.story)?.title || "None"}
+                value={
+                  stories.find((s) => s.id === task.story)?.title || "None"
+                }
                 options={stories.map((story) => ({
                   value: story.id,
                   label: story.title,
