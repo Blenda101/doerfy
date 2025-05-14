@@ -4,7 +4,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "./ui/tooltip";
-import { AlarmClock, Repeat } from "lucide-react";
+import {
+  AlarmClock,
+  Repeat,
+  Calendar,
+  CalendarCheck,
+  Bell,
+  Clock,
+} from "lucide-react";
 import { TaskSchedule } from "../types/task";
 import { toZonedTime, format as tzFormat } from "date-fns-tz";
 
@@ -35,12 +42,37 @@ const ScheduleInfo = (props: { schedule: TaskSchedule }) => {
     dateTimeStr = tzFormat(zoned, "h:mm a zzz", { timeZone });
   }
 
-  // Recurring label
+  // Determine icon and title based on schedule properties
   let title = "";
-  if (schedule.recurring?.type) {
-    title = "Time Recurring";
-  } else {
+  let IconComponent = Calendar;
+
+  if (schedule.time) {
     title = "Time";
+    if (schedule.alarmEnabled) {
+      if (schedule.recurring?.type) {
+        title = "Time alarm recurring";
+        IconComponent = Repeat; // You can use a custom icon if you want to combine alarm+repeat
+      } else {
+        title = "Time alarm";
+        IconComponent = AlarmClock;
+      }
+    } else {
+      if (schedule.recurring?.type) {
+        title = "Time recurring";
+        IconComponent = Repeat;
+      } else {
+        title = "Time";
+        IconComponent = Clock;
+      }
+    }
+  } else if (schedule.date) {
+    if (schedule.recurring?.type) {
+      title = "Date recurring";
+      IconComponent = CalendarCheck;
+    } else {
+      title = "Date";
+      IconComponent = Calendar;
+    }
   }
 
   // Lead and duration
@@ -60,14 +92,14 @@ const ScheduleInfo = (props: { schedule: TaskSchedule }) => {
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger>
-          <AlarmClock
-            size={18}
+          <IconComponent
+            size={16}
             className="ml-2 text-[#5036b0] hover:text-[#6c47d6] transition-colors"
           />
         </TooltipTrigger>
         <TooltipContent className="min-w-[220px] p-3">
           <div className="flex items-center gap-2 mb-1">
-            <Repeat size={16} className="text-[#5036b0]" />
+            <IconComponent size={16} className="text-[#5036b0]" />
             <span className="font-semibold text-[#5036b0]">{title}</span>
           </div>
           <div className="text-xs text-black mb-1 text-center">

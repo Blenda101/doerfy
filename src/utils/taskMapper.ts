@@ -46,6 +46,7 @@ export function mapTaskFromSupabase(
           leadHours: data.lead_hours || 0,
           durationDays: data.duration_days || 0,
           durationHours: data.duration_hours || 0,
+          alarmEnabled: data.alarm_enabled ?? false,
           recurring:
             data.recurring !== null
               ? {
