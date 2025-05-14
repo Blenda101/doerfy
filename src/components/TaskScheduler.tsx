@@ -20,14 +20,15 @@ import {
 } from "./ui/tooltip";
 import { format } from "date-fns";
 import DatePicker from "react-datepicker";
+import { CalendarIcon, Clock, Bell, HelpCircle } from "lucide-react";
 import {
-  CalendarIcon,
-  Clock,
-  Bell,
-  HelpCircle,
-} from "lucide-react";
-import { TaskSchedule } from "../types/task";
+  EndsType,
+  RecurringPattern,
+  TaskSchedule,
+  WeekDays,
+} from "../types/task";
 import { cn } from "../lib/utils";
+import { WEEK_DAYS } from "../data/week";
 
 interface TaskSchedulerProps {
   schedule: TaskSchedule | null;
@@ -55,8 +56,6 @@ export const TaskScheduler: React.FC<TaskSchedulerProps> = ({
   const [selectedTab, setSelectedTab] = useState<
     "today" | "tomorrow" | "custom"
   >("today");
-  const [isLeadHovered, setIsLeadHovered] = useState(false);
-  const [isDurationHovered, setIsDurationHovered] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -64,7 +63,7 @@ export const TaskScheduler: React.FC<TaskSchedulerProps> = ({
         schedule || {
           enabled: true,
           date: new Date(),
-          time: "",
+          time: null,
           leadDays: 0,
           leadHours: 0,
           durationDays: 0,
@@ -75,6 +74,8 @@ export const TaskScheduler: React.FC<TaskSchedulerProps> = ({
       setSelectedTab("today");
     }
   }, [isOpen, schedule]);
+
+  console.log({ schedule });
 
   const handleTimeChange = (time: string) => {
     setCurrentSchedule((prev) => ({
@@ -275,7 +276,7 @@ export const TaskScheduler: React.FC<TaskSchedulerProps> = ({
                       "dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200",
                     )}
                     placeholder="Set Time"
-                    value={currentSchedule.time}
+                    value={currentSchedule.time!}
                     onChange={(e) => handleTimeChange(e.target.value)}
                   />
                   <Clock className="absolute left-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500 dark:text-slate-400" />
@@ -387,7 +388,7 @@ export const TaskScheduler: React.FC<TaskSchedulerProps> = ({
                   )}
                   value={currentSchedule.recurring?.type || "none"}
                   onChange={(e) => {
-                    const value = e.target.value;
+                    const value = e.target.value as RecurringPattern;
                     if (value === "none") {
                       setCurrentSchedule((prev) => ({
                         ...prev,
@@ -397,12 +398,10 @@ export const TaskScheduler: React.FC<TaskSchedulerProps> = ({
                       setCurrentSchedule((prev) => ({
                         ...prev,
                         recurring: {
-                          type: value as NonNullable<
-                            TaskSchedule["recurring"]
-                          >["type"],
+                          type: value,
                           interval: 1,
                           ends: {
-                            type: "endless",
+                            type: "never",
                           },
                         },
                       }));
@@ -474,7 +473,7 @@ export const TaskScheduler: React.FC<TaskSchedulerProps> = ({
                       Occurs on
                     </Label>
                     <div className="flex space-x-2">
-                      {["S", "M", "T", "W", "T", "F", "S"].map((day, index) => (
+                      {WEEK_DAYS.map((day, index) => (
                         <Button
                           key={index}
                           variant={
@@ -544,21 +543,18 @@ export const TaskScheduler: React.FC<TaskSchedulerProps> = ({
                         recurring: {
                           ...prev.recurring!,
                           ends: {
-                            type: e.target.value as
-                              | "date"
-                              | "occurrences"
-                              | "endless",
+                            type: e.target.value as EndsType,
                           },
                         },
                       }))
                     }
                   >
-                    <option value="endless">Never</option>
-                    <option value="date">On Date</option>
-                    <option value="occurrences">After Occurrences</option>
+                    <option value="never">Never</option>
+                    <option value="on-date">On Date</option>
+                    <option value="after-occurrences">After Occurrences</option>
                   </select>
 
-                  {currentSchedule.recurring.ends?.type === "date" && (
+                  {currentSchedule.recurring.ends?.type === "on-date" && (
                     <div className="mt-2">
                       <DatePicker
                         selected={currentSchedule.recurring.ends.date}
@@ -568,7 +564,7 @@ export const TaskScheduler: React.FC<TaskSchedulerProps> = ({
                             recurring: {
                               ...prev.recurring!,
                               ends: {
-                                type: "date",
+                                type: "on-date",
                                 date: date || undefined,
                               },
                             },
@@ -581,7 +577,8 @@ export const TaskScheduler: React.FC<TaskSchedulerProps> = ({
                     </div>
                   )}
 
-                  {currentSchedule.recurring.ends?.type === "occurrences" && (
+                  {currentSchedule.recurring.ends?.type ===
+                    "after-occurrences" && (
                     <div className="mt-2">
                       <Input
                         type="number"
@@ -593,7 +590,7 @@ export const TaskScheduler: React.FC<TaskSchedulerProps> = ({
                             recurring: {
                               ...prev.recurring!,
                               ends: {
-                                type: "occurrences",
+                                type: "after-occurrences",
                                 occurrences:
                                   parseInt(e.target.value) || undefined,
                               },

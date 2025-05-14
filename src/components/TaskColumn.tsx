@@ -25,6 +25,13 @@ import { Task } from "../types/task";
 import { cn } from "../lib/utils";
 import { TaskHoverCard } from "./TaskHoverCard";
 import { validateTaskTitle } from "../modules/tasks/lists/utils/taskUtils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "./ui/tooltip";
+import ScheduleInfo from "./ScheduleInfo";
 
 interface TaskColumnProps {
   title: string;
@@ -339,7 +346,7 @@ export const TaskColumn: React.FC<TaskColumnProps> = ({
                         />
                       ) : (
                         <>
-                          <div className="flex-1">
+                          <div className="flex-1 group">
                             <div className="flex items-center">
                               <span
                                 className={cn(
@@ -353,7 +360,9 @@ export const TaskColumn: React.FC<TaskColumnProps> = ({
                               >
                                 {task.title}
                               </span>
-                              {renderTaskIndicators(task)}
+                              {task.schedule ? (
+                                <ScheduleInfo schedule={task.schedule} />
+                              ) : null}
                             </div>
                             {task.status && (
                               <span className="text-xs text-gray-500 dark:text-gray-400">
@@ -361,7 +370,7 @@ export const TaskColumn: React.FC<TaskColumnProps> = ({
                               </span>
                             )}
                           </div>
-                          <div className="flex items-center gap-2 ml-2">
+                          <div className="flex items-center gap-2 ml-2 group-hover:opacity-100 opacity-0 transition-opacity duration-200">
                             <TaskHoverCard task={task}>
                               <InfoIcon
                                 size={16}

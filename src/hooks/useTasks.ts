@@ -102,7 +102,7 @@ export const useTasks = ({ lists }: UseTasksProps): UseTasksReturn => {
   }, []);
 
   const tasksByList = tasks.reduce((acc, task) => {
-    const list = lists.find((l) => l.id === task.list_id);
+    const list = lists.find((l) => l.id === task.listId);
     if (!list) return acc;
 
     if (!acc[list.id]) {

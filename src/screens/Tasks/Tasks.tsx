@@ -24,10 +24,12 @@ import { supabase } from "../../utils/supabaseClient";
 import { cn } from "../../lib/utils";
 import { Filter, ListIcon, CalendarIcon } from "lucide-react";
 import { toast } from "react-hot-toast";
-import { Task } from "../../types/task";
+import { Task, TaskFromSupabase, TaskSchedule } from "../../types/task";
 import ToggleButton from "../../components/ui/toggle";
 import { useLists } from "../../hooks/useLists";
 import useStories from "../../hooks/useStories";
+import { mapTaskFromSupabase, mapTaskToSupabase } from "../../utils/taskMapper";
+import { getTask } from "../../utils/task";
 
 const STORAGE_KEYS = {
   ACTIVE_TAB: "activeTaskTab",
@@ -56,11 +58,12 @@ export const Tasks: React.FC = () => {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(() =>
     localStorage.getItem(STORAGE_KEYS.SELECTED_TASK),
   );
-  const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { lists, setLists } = useLists();
   const { stories } = useStories("todo");
+
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
   useEffect(() => {
@@ -89,28 +92,20 @@ export const Tasks: React.FC = () => {
           data: { user },
         } = await supabase.auth.getUser();
         if (!user) throw new Error("No authenticated user found");
-
-        const { data, error } = await supabase
+        const { data, error } = (await supabase
           .from("tasks")
           .select("*")
           .eq("assignee", user.id)
-          .order("created_at", { ascending: false });
+          .order("created_at", { ascending: false })) as {
+          data: TaskFromSupabase[] | null;
+          error: Error | null;
+        };
 
         if (error) throw error;
 
-        const transformedTasks =
-          data?.map((task) => ({
-            ...task,
-            showInTimeBox: task.show_in_time_box,
-            showInList: task.show_in_list,
-            showInCalendar: task.show_in_calendar,
-            timeStage: task.timestage,
-            agingStatus: task.aging_status,
-            stageEntryDate: task.stage_entry_date,
-            createdAt: task.created_at,
-            updatedAt: task.updated_at,
-            createdBy: task.created_by,
-          })) || [];
+        const transformedTasks: Task[] = data
+          ? data.map((task) => mapTaskFromSupabase(task, user.id))
+          : [];
 
         setTasks(transformedTasks);
 
@@ -161,50 +156,10 @@ export const Tasks: React.FC = () => {
     try {
       setIsLoading(true);
 
-      const scheduleData = updatedTask.schedule?.enabled
-        ? {
-            schedule_date: updatedTask.schedule.date,
-            schedule_time: updatedTask.schedule.time,
-            lead_days: updatedTask.schedule.leadDays || 0,
-            lead_hours: updatedTask.schedule.leadHours || 0,
-            duration_days: updatedTask.schedule.durationDays || 0,
-            duration_hours: updatedTask.schedule.durationHours || 0,
-            recurring: updatedTask.schedule.recurring?.type || null,
-          }
-        : {
-            schedule_date: null,
-            schedule_time: null,
-            lead_days: 0,
-            lead_hours: 0,
-            duration_days: 0,
-            duration_hours: 0,
-            recurring: null,
-          };
-
+      const supabaseTask = mapTaskToSupabase(updatedTask);
       const { error } = await supabase
         .from("tasks")
-        .update({
-          title: updatedTask.title,
-          description: updatedTask.description,
-          timestage: updatedTask.timeStage,
-          stage_entry_date: updatedTask.stageEntryDate,
-          assignee: updatedTask.assignee,
-          list_id: updatedTask.listId,
-          priority: updatedTask.priority,
-          energy: updatedTask.energy,
-          location: updatedTask.location,
-          story: updatedTask.story,
-          labels: updatedTask.labels,
-          icon: updatedTask.icon,
-          show_in_time_box: updatedTask.showInTimeBox,
-          show_in_list: updatedTask.showInList,
-          show_in_calendar: updatedTask.showInCalendar,
-          highlighted: updatedTask.highlighted,
-          status: updatedTask.status,
-          aging_status: updatedTask.agingStatus,
-          updated_at: new Date().toISOString(),
-          ...scheduleData,
-        })
+        .update(supabaseTask)
         .eq("id", updatedTask.id);
 
       if (error) throw error;
@@ -222,36 +177,8 @@ export const Tasks: React.FC = () => {
 
       if (refreshError) throw refreshError;
 
-      const transformedTasks =
-        refreshedTasks?.map((task) => ({
-          ...task,
-          showInTimeBox: task.show_in_time_box,
-          showInList: task.show_in_list,
-          showInCalendar: task.show_in_calendar,
-          timeStage: task.timestage,
-          agingStatus: task.aging_status,
-          stageEntryDate: task.stage_entry_date,
-          createdAt: task.created_at,
-          updatedAt: task.updated_at,
-          createdBy: task.created_by,
-          schedule: task.schedule_date
-            ? {
-                enabled: true,
-                date: new Date(task.schedule_date),
-                time: task.schedule_time || "",
-                leadDays: task.lead_days || 0,
-                leadHours: task.lead_hours || 0,
-                durationDays: task.duration_days || 0,
-                durationHours: task.duration_hours || 0,
-                recurring: task.recurring
-                  ? {
-                      type: task.recurring,
-                      interval: 1,
-                    }
-                  : undefined,
-              }
-            : undefined,
-        })) || [];
+      const transformedTasks: Task[] =
+        refreshedTasks?.map((task) => mapTaskFromSupabase(task, user.id)) || [];
 
       setTasks(transformedTasks);
       toast.success("Task updated successfully");
@@ -321,23 +248,17 @@ export const Tasks: React.FC = () => {
                 {
                   value: "timebox",
                   label: "Time",
-                  icon: (
-                    <Filter className="text-theme-light dark:text-theme-dark" />
-                  ),
+                  icon: <Filter />,
                 },
                 {
                   value: "lists",
                   label: "Lists",
-                  icon: (
-                    <ListIcon className="text-theme-light dark:text-theme-dark" />
-                  ),
+                  icon: <ListIcon />,
                 },
                 {
                   value: "calendar",
                   label: "Calendar",
-                  icon: (
-                    <CalendarIcon className="text-theme-light dark:text-theme-dark" />
-                  ),
+                  icon: <CalendarIcon />,
                 },
               ]}
               activeOption={activeTab}
@@ -361,11 +282,12 @@ export const Tasks: React.FC = () => {
                   <PtbTimeBox
                     theme={theme}
                     tasks={tasks}
-                    onTaskSelect={(taskId) =>
+                    onTaskSelect={(taskId) => {
                       setSelectedTask(
                         tasks.find((t) => t.id === taskId) || null,
-                      )
-                    }
+                      );
+                      console.log(tasks);
+                    }}
                     selectedTaskId={selectedTask?.id}
                     onTaskUpdate={handleTaskUpdate}
                   />
