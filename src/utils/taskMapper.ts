@@ -47,7 +47,7 @@ export function mapTaskFromSupabase(
           durationDays: data.duration_days || 0,
           durationHours: data.duration_hours || 0,
           recurring:
-            data.recurring !== "none" || !data.recurring
+            data.recurring !== null
               ? {
                   type: data.recurring as RecurringPattern,
                   interval: data.recurring_interval ?? 0,

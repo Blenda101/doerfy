@@ -27,6 +27,7 @@ import { Sheet } from "./Sheet";
 import { Editor } from "./forms/Editor";
 import { List } from "../hooks/useLists";
 import { Story } from "../types/story";
+import { Schedule } from "./Schedule";
 
 interface PropertySheetProps {
   task: Task;
@@ -107,19 +108,6 @@ export const PropertySheet: React.FC<PropertySheetProps> = ({
     handleTaskUpdate({ schedule });
   };
 
-  const formatScheduleDetails = () => {
-    if (!task?.schedule?.enabled || !task?.schedule?.date) return "";
-
-    const date = new Date(task.schedule.date);
-    const formattedDate = format(date, "MMM d");
-    const leadText =
-      task.schedule.leadDays || task.schedule.leadHours
-        ? ` (${task.schedule.leadDays}d ${task.schedule.leadHours}h)`
-        : "";
-
-    return `${formattedDate}, ${task.schedule.time}${leadText}`;
-  };
-
   const headerActions = (
     <Button
       variant="ghost"
@@ -149,43 +137,11 @@ export const PropertySheet: React.FC<PropertySheetProps> = ({
       <div className="space-y-6 overflow-y-auto max-h-[calc(100vh-200px)] pr-2">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-4">
-            <Button
-              variant={task?.schedule?.enabled ? "default" : "ghost"}
-              className={cn(
-                "h-9 border-none rounded flex items-center text-base gap-2",
-                task?.schedule?.enabled
-                  ? "bg-[#5036b0] text-white hover:bg-[#3a2783] dark:bg-[#8B5CF6] dark:hover:bg-[#7C3AED]"
-                  : "bg-[#efefef] hover:bg-[#e5e5e5] dark:bg-slate-700 dark:hover:bg-slate-600",
-              )}
-              onClick={() => setIsSchedulerOpen(true)}
-            >
-              {task?.schedule?.recurring ? (
-                <RepeatIcon
-                  className={cn(
-                    "w-5 h-5",
-                    task?.schedule?.enabled
-                      ? "text-white"
-                      : theme === "dark"
-                      ? "text-slate-300"
-                      : "text-[#6f6f6f]",
-                  )}
-                />
-              ) : (
-                <CalendarIcon
-                  className={cn(
-                    "w-5 h-5",
-                    task?.schedule?.enabled
-                      ? "text-white"
-                      : theme === "dark"
-                      ? "text-slate-300"
-                      : "text-[#6f6f6f]",
-                  )}
-                />
-              )}
-              <span className="font-normal">
-                {task?.schedule?.enabled ? formatScheduleDetails() : "Schedule"}
-              </span>
-            </Button>
+            <Schedule
+              schedule={task.schedule}
+              onScheduleChange={handleScheduleChange}
+              theme={theme}
+            />
 
             <Button
               variant="outline"
