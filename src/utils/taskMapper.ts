@@ -6,6 +6,8 @@ import {
   TimeStage,
   Energy,
   AgingStatus,
+  WeekDays,
+  EndsType,
 } from "../types/task";
 
 export function mapTaskFromSupabase(
@@ -39,17 +41,30 @@ export function mapTaskFromSupabase(
       ? {
           enabled: true,
           date: new Date(data.schedule_date),
-          time: data.schedule_time || "",
+          time: data.schedule_time ?? "",
           leadDays: data.lead_days || 0,
           leadHours: data.lead_hours || 0,
           durationDays: data.duration_days || 0,
           durationHours: data.duration_hours || 0,
-          recurring: data.recurring
-            ? {
-                type: data.recurring as RecurringPattern,
-                interval: 1,
-              }
-            : undefined,
+          recurring:
+            data.recurring !== "none" || !data.recurring
+              ? {
+                  type: data.recurring as RecurringPattern,
+                  interval: data.recurring_interval ?? 0,
+                  weekDays: data.week_days as WeekDays[],
+                  workdaysOnly: data.workdays_only ?? false,
+                  ends:
+                    data.ends_type !== "never" || !data.ends_type
+                      ? {
+                          type: data.ends_type as EndsType,
+                          date: data.ends_date
+                            ? new Date(data.ends_date)
+                            : undefined,
+                          occurrences: data.ends_after_occurrences || undefined,
+                        }
+                      : undefined,
+                }
+              : undefined,
         }
       : null,
     checklistItems: [],
@@ -62,5 +77,47 @@ export function mapTaskFromSupabase(
         userId: userId,
       },
     ],
+  };
+}
+
+export function mapTaskToSupabase(task: Task): TaskFromSupabase {
+  return {
+    id: task.id,
+    title: task.title,
+    description: task.description,
+    timestage: task.timeStage,
+    stage_entry_date: task.stageEntryDate,
+    assignee: task.assignee,
+    list_id: task.listId,
+    aging_status: task.agingStatus ?? null,
+    created_at: task.createdAt,
+    created_by: task.createdBy,
+    energy: task.energy,
+    location: task.location,
+    story: task.story,
+    story_id: task.story ?? null,
+    labels: task.labels,
+    icon: task.icon,
+    show_in_time_box: task.showInTimeBox,
+    show_in_list: task.showInList,
+    show_in_calendar: task.showInCalendar,
+    highlighted: task.highlighted,
+    status: task.status ?? null,
+    priority: task.priority,
+    updated_at: task.updatedAt,
+    schedule_date: task.schedule?.date?.toISOString() ?? null,
+    schedule_time: task.schedule?.time ?? null,
+    lead_days: task.schedule?.leadDays ?? 0,
+    lead_hours: task.schedule?.leadHours ?? 0,
+    duration_days: task.schedule?.durationDays ?? 0,
+    duration_hours: task.schedule?.durationHours ?? 0,
+    recurring: task.schedule?.recurring?.type ?? null,
+    recurring_interval: task.schedule?.recurring?.interval ?? 0,
+    week_days: task.schedule?.recurring?.weekDays ?? null,
+    workdays_only: task.schedule?.recurring?.workdaysOnly ?? false,
+    ends_type: task.schedule?.recurring?.ends?.type ?? null,
+    ends_date: task.schedule?.recurring?.ends?.date?.toISOString() ?? null,
+    ends_after_occurrences: task.schedule?.recurring?.ends?.occurrences ?? null,
+    alarm_enabled: task.schedule?.alarmEnabled ?? false,
   };
 }

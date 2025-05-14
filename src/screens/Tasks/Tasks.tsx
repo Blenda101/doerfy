@@ -28,7 +28,7 @@ import { Task, TaskFromSupabase, TaskSchedule } from "../../types/task";
 import ToggleButton from "../../components/ui/toggle";
 import { useLists } from "../../hooks/useLists";
 import useStories from "../../hooks/useStories";
-import { mapTaskFromSupabase } from "../../utils/taskMapper";
+import { mapTaskFromSupabase, mapTaskToSupabase } from "../../utils/taskMapper";
 import { getTask } from "../../utils/task";
 
 const STORAGE_KEYS = {
@@ -156,55 +156,10 @@ export const Tasks: React.FC = () => {
     try {
       setIsLoading(true);
 
-      const scheduleData: Partial<TaskFromSupabase> = updatedTask.schedule
-        ?.enabled
-        ? {
-            schedule_date: updatedTask.schedule.date?.toISOString() || null,
-            schedule_time: updatedTask.schedule.time || null,
-            lead_days: updatedTask.schedule.leadDays || 0,
-            lead_hours: updatedTask.schedule.leadHours || 0,
-            duration_days: updatedTask.schedule.durationDays || 0,
-            duration_hours: updatedTask.schedule.durationHours || 0,
-            alarm_enabled: updatedTask.schedule.alarmEnabled || false,
-            recurring: updatedTask.schedule.recurring?.type || null,
-            recurring_interval:
-              updatedTask.schedule.recurring?.interval || null,
-          }
-        : {
-            schedule_date: null,
-            schedule_time: null,
-            lead_days: 0,
-            lead_hours: 0,
-            duration_days: 0,
-            duration_hours: 0,
-            recurring: null,
-            recurring_interval: null,
-          };
-
+      const supabaseTask = mapTaskToSupabase(updatedTask);
       const { error } = await supabase
         .from("tasks")
-        .update({
-          title: updatedTask.title,
-          description: updatedTask.description,
-          timestage: updatedTask.timeStage,
-          stage_entry_date: updatedTask.stageEntryDate,
-          assignee: updatedTask.assignee,
-          list_id: updatedTask.listId,
-          priority: updatedTask.priority,
-          energy: updatedTask.energy,
-          location: updatedTask.location,
-          story: updatedTask.story,
-          labels: updatedTask.labels,
-          icon: updatedTask.icon,
-          show_in_time_box: updatedTask.showInTimeBox,
-          show_in_list: updatedTask.showInList,
-          show_in_calendar: updatedTask.showInCalendar,
-          highlighted: updatedTask.highlighted,
-          status: updatedTask.status,
-          aging_status: updatedTask.agingStatus,
-          updated_at: new Date().toISOString(),
-          ...scheduleData,
-        })
+        .update(supabaseTask)
         .eq("id", updatedTask.id);
 
       if (error) throw error;
