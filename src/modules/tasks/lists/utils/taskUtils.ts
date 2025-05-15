@@ -1,4 +1,4 @@
-import { Task, TaskFromSupabase } from "../../../../types/task";
+import { Task } from "../../../../types/task";
 import { supabase } from "../../../../utils/supabaseClient";
 import { getAuthenticatedUser } from "../../../../utils/auth";
 import { mapTaskFromSupabase } from "../../../../utils/taskMapper";
@@ -30,7 +30,7 @@ export async function createNewTask(
       priority: "medium",
       energy: "medium",
       location: null,
-      story: null,
+      // story: null,
       labels: [],
       show_in_time_box: true,
       show_in_list: true,

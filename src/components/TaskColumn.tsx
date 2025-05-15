@@ -25,12 +25,8 @@ import { Task } from "../types/task";
 import { cn } from "../lib/utils";
 import { TaskHoverCard } from "./TaskHoverCard";
 import { validateTaskTitle } from "../modules/tasks/lists/utils/taskUtils";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "./ui/tooltip";
+
+
 import ScheduleInfo from "./ScheduleInfo";
 
 interface TaskColumnProps {

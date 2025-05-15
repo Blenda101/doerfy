@@ -20,7 +20,6 @@ export function getTask(data: Partial<TaskFromSupabase>): TaskFromSupabase {
     priority: "medium",
     energy: "medium" as Energy,
     location: null,
-    story: null,
     story_id: null,
     labels: [],
     show_in_time_box: true,

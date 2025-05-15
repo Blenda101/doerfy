@@ -30,10 +30,6 @@ export const PtbTimeBox: React.FC<PtbTimeBoxProps> = ({
   const [timeBoxes, setTimeBoxes] = useState<TimeBox[]>([]);
   const [activeTimeStage, setActiveTimeStage] = useState<TimeBoxStage>("queue");
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
-  const [draggedTask, setDraggedTask] = useState<Task | null>(null);
-  const [dropTargetStage, setDropTargetStage] = useState<TimeBoxStage | null>(
-    null,
-  );
   const [todos, setTodos] = useState<StoryWithRelations[]>([]);
 
   useEffect(() => {
@@ -82,6 +78,7 @@ export const PtbTimeBox: React.FC<PtbTimeBoxProps> = ({
           .or(`assignee.eq.${user.id},created_by.eq.${user.id}`);
 
         if (error) throw error;
+        //@ts-ignore
         setTodos(stories || []);
       } catch (error) {
         console.error("Error loading todos:", error);
@@ -166,7 +163,7 @@ export const PtbTimeBox: React.FC<PtbTimeBoxProps> = ({
     updatedTimeBoxes[newIndex] = temp;
 
     updatedTimeBoxes.forEach((tb, index) => {
-      tb.order = index;
+      tb.sort_order = index;
     });
 
     setTimeBoxes(updatedTimeBoxes);
@@ -247,7 +244,7 @@ export const PtbTimeBox: React.FC<PtbTimeBoxProps> = ({
       />
 
       {timeBoxes
-        .sort((a, b) => a.order - b.order)
+        .sort((a, b) => a.sort_order - b.sort_order)
         .map((timeBox) => {
           const stageTasks = getTasksByStage(timeBox.id as TimeBoxStage);
           return (
@@ -267,9 +264,9 @@ export const PtbTimeBox: React.FC<PtbTimeBoxProps> = ({
               onTimeBoxMove={handleTimeBoxMove}
               editingTaskId={editingTaskId}
               isActive={activeTimeStage === timeBox.id}
-              canMoveUp={timeBox.order > 0}
-              canMoveDown={timeBox.order < timeBoxes.length - 1}
-              expireThreshold={timeBox.expireThreshold}
+              canMoveUp={timeBox.sort_order > 0}
+              canMoveDown={timeBox.sort_order < timeBoxes.length - 1}
+              expireThreshold={timeBox.expireThreshold || 0}
               selectedTaskId={selectedTaskId}
             />
           );

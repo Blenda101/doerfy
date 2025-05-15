@@ -1,10 +1,5 @@
-export interface TimeBox {
-  id: string;
-  name: string;
-  description: string;
-  warnThreshold?: number;
-  expireThreshold?: number;
-  order: number;
-}
+import { Database } from "./supabase";
 
-export type TimeBoxStage = 'queue' | 'do' | 'doing' | 'today' | 'done';
+export type TimeBox = Database["public"]["Tables"]["time_boxes"]["Row"];
+
+export type TimeBoxStage = "queue" | "do" | "doing" | "today" | "done";

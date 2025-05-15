@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useRef } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
 import {
   Dialog,
@@ -12,17 +12,12 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Switch } from "./ui/switch";
 import { Slider } from "./ui/slider";
-import { LabelEditor } from "./LabelEditor";
-import { Note, Notebook, NoteWithAuthor } from "../types/note";
-import { Theme } from "../utils/theme";
 import {
   Image as ImageIcon,
   Music2,
   X,
   Search,
   Loader2,
-  Camera,
-  Quote,
 } from "lucide-react";
 import { getCurrentUser, supabase } from "../utils/supabaseClient";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
