@@ -5,30 +5,26 @@ import { Task } from "../../types/task";
 import { StoryWithRelations } from "../../types/story";
 import { TimeBox, TimeBoxStage } from "../../types/timeBox";
 import { defaultTimeBoxes } from "../../data/timeBoxes";
-import { saveTimeBoxes, saveTasks, deleteTask } from "../../utils/storage";
+import { saveTimeBoxes } from "../../utils/storage";
 import { TimeBoxConfig } from "../../components/TimeBoxDialog";
 import { Theme } from "../../utils/theme";
-import { createNewTask } from "../../modules/tasks/lists/utils/taskUtils";
 import { toast } from "react-hot-toast";
 import { supabase } from "../../utils/supabaseClient";
+import { useTaskContext } from "../../hooks/useTaskContext";
 
 interface PtbTimeBoxProps {
   theme?: Theme;
-  tasks: Task[];
-  setTasks: (tasks: Task[]) => void;
   onTaskSelect?: (task: Task) => void;
   selectedTaskId?: string | null;
-  onTaskUpdate?: (task: Task) => void;
 }
 
 export const PtbTimeBox: React.FC<PtbTimeBoxProps> = ({
   theme = "light",
-  tasks,
-  setTasks,
   onTaskSelect,
   selectedTaskId,
-  onTaskUpdate,
 }) => {
+  const { tasks, createTask, updateTask, deleteTask } = useTaskContext();
+
   const [timeBoxes, setTimeBoxes] = useState<TimeBox[]>([]);
   const [activeTimeStage, setActiveTimeStage] = useState<TimeBoxStage>("queue");
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
@@ -91,7 +87,7 @@ export const PtbTimeBox: React.FC<PtbTimeBoxProps> = ({
     loadTodos();
   }, []);
 
-  const handleTaskSelect = (task: Task) => {
+  const handleTaskSelectInternal = (task: Task) => {
     if (editingTaskId !== task.id) {
       onTaskSelect?.(task);
       setActiveTimeStage(task.timeStage as TimeBoxStage);
@@ -107,33 +103,27 @@ export const PtbTimeBox: React.FC<PtbTimeBoxProps> = ({
       if (!timeStage) {
         throw new Error("timeStage is required");
       }
-
-      const newTask = await createNewTask(title, timeStage);
-      if (!newTask.timeStage) {
-        throw new Error("Task creation failed: timestage is missing");
+      const newTaskData: Partial<Task> = {
+        title,
+        timeStage,
+        showInTimeBox: true,
+      };
+      const newTask = await createTask(newTaskData);
+      if (newTask && onTaskSelect) {
+        onTaskSelect(newTask);
+        setActiveTimeStage(timeStage);
+      } else if (!newTask) {
+        throw new Error("Task creation failed: context returned undefined");
       }
-
-      const updatedTasks = [newTask, ...tasks];
-      await saveTasks(updatedTasks);
-      setTasks(updatedTasks);
-      onTaskSelect?.(newTask);
-      setActiveTimeStage(timeStage);
     } catch (error) {
       console.error("Error creating new task:", error);
-      toast.error("Failed to create task");
-      throw error;
+      toast.error("Failed to create task in PtbTimeBox");
     }
   };
 
   const handleTaskTitleUpdate = async (taskId: string, title: string) => {
     if (editingTaskId === taskId) {
-      const updatedTasks = tasks.map((task) =>
-        task.id === taskId
-          ? { ...task, title: title.trim() || task.title }
-          : task,
-      );
-      await saveTasks(updatedTasks);
-      setTasks(updatedTasks);
+      await updateTask(taskId, { title: title.trim() });
       setEditingTaskId(null);
     } else {
       setEditingTaskId(taskId);
@@ -182,32 +172,32 @@ export const PtbTimeBox: React.FC<PtbTimeBoxProps> = ({
       if (!timeStage) {
         throw new Error("timeStage is required");
       }
+      const newTaskData: Partial<Task> = {
+        title: todo.title,
+        description: todo.description,
+        story: todo.id,
+        timeStage: timeStage as TimeBoxStage,
+        showInTimeBox: true,
+      };
+      const newTask = await createTask(newTaskData);
 
-      const newTask = await createNewTask(todo.title, timeStage);
-      if (!newTask.timeStage) {
-        throw new Error("Task creation failed: timestage is missing");
+      if (newTask) {
+        if (onTaskSelect) onTaskSelect(newTask);
+        setActiveTimeStage(timeStage as TimeBoxStage);
+
+        const { error } = await supabase
+          .from("stories")
+          .update({ status: "completed" })
+          .eq("id", todo.id);
+        if (error) throw error;
+        setTodos(todos.filter((t) => t.id !== todo.id));
+        toast.success("Task created from todo successfully");
+      } else {
+        throw new Error("Task creation from todo failed");
       }
-
-      newTask.description = todo.description;
-      newTask.story = todo.id;
-
-      const updatedTasks = [newTask, ...tasks];
-      await saveTasks(updatedTasks);
-      onTaskSelect?.(newTask);
-      setActiveTimeStage(timeStage as TimeBoxStage);
-
-      const { error } = await supabase
-        .from("stories")
-        .update({ status: "completed" })
-        .eq("id", todo.id);
-
-      if (error) throw error;
-
-      setTodos(todos.filter((t) => t.id !== todo.id));
-      toast.success("Task created successfully");
     } catch (error) {
       console.error("Error creating task from todo:", error);
-      toast.error("Failed to create task");
+      toast.error("Failed to create task from todo");
     }
   };
 
@@ -260,7 +250,7 @@ export const PtbTimeBox: React.FC<PtbTimeBoxProps> = ({
               badgeCount={stageTasks.length}
               defaultExpanded={timeBox.id !== "doing" && timeBox.id !== "done"}
               timeStage={timeBox.id as TimeBoxStage}
-              onTaskSelect={handleTaskSelect}
+              onTaskSelect={handleTaskSelectInternal}
               onNewTask={handleNewTask}
               onTaskTitleUpdate={handleTaskTitleUpdate}
               onTaskDelete={deleteTask}

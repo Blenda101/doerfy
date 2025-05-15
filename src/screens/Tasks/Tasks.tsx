@@ -22,6 +22,8 @@ import ToggleButton from "../../components/ui/toggle";
 import { useLists } from "../../hooks/useLists";
 import useStories from "../../hooks/useStories";
 import { mapTaskFromSupabase, mapTaskToSupabase } from "../../utils/taskMapper";
+import { TaskProvider } from "../../contexts/TaskContext";
+import { useTaskContext } from "../../hooks/useTaskContext";
 
 const STORAGE_KEYS = {
   ACTIVE_TAB: "activeTaskTab",
@@ -38,7 +40,7 @@ type HeaderProps = {
   setIsAddListOpen?: (value: boolean) => void;
 };
 
-export const Tasks: React.FC = () => {
+const TasksComponent: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ActiveTab>(
     () =>
       (localStorage.getItem(STORAGE_KEYS.ACTIVE_TAB) as ActiveTab) || "timebox",
@@ -47,16 +49,24 @@ export const Tasks: React.FC = () => {
   const [theme, setTheme] = useState<Theme>(getInitialTheme);
   const [isAddListOpen, setIsAddListOpen] = useState(false);
   const [activePanel, setActivePanel] = useState<ActivePanel>(null);
-  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(() =>
-    localStorage.getItem(STORAGE_KEYS.SELECTED_TASK),
+  const [selectedLocalTaskId, setSelectedLocalTaskId] = useState<string | null>(
+    () => localStorage.getItem(STORAGE_KEYS.SELECTED_TASK),
   );
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+
+  const {
+    tasks,
+    isLoading: tasksLoading,
+    error: tasksError,
+    getTaskById,
+    updateTask: updateTaskContext,
+  } = useTaskContext();
+
   const { lists, setLists } = useLists();
   const { stories } = useStories("todo");
 
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [selectedTaskForSheet, setSelectedTaskForSheet] = useState<Task | null>(
+    null,
+  );
 
   useEffect(() => {
     setThemeUtil(theme);
@@ -67,114 +77,43 @@ export const Tasks: React.FC = () => {
   }, [activeTab]);
 
   useEffect(() => {
-    if (selectedTaskId) {
-      localStorage.setItem(STORAGE_KEYS.SELECTED_TASK, selectedTaskId);
+    if (selectedLocalTaskId) {
+      localStorage.setItem(STORAGE_KEYS.SELECTED_TASK, selectedLocalTaskId);
+      const task = getTaskById(selectedLocalTaskId);
+      setSelectedTaskForSheet(task || null);
+      if (task) setActivePanel("property");
+      else setActivePanel(null);
     } else {
       localStorage.removeItem(STORAGE_KEYS.SELECTED_TASK);
+      setSelectedTaskForSheet(null);
     }
-  }, [selectedTaskId]);
-
-  useEffect(() => {
-    const fetchTasks = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (!user) throw new Error("No authenticated user found");
-        const { data, error } = (await supabase
-          .from("tasks")
-          .select("*")
-          .eq("assignee", user.id)
-          .order("created_at", { ascending: false })) as {
-          data: TaskFromSupabase[] | null;
-          error: Error | null;
-        };
-
-        if (error) throw error;
-
-        const transformedTasks: Task[] = data
-          ? data.map((task) => mapTaskFromSupabase(task, user.id))
-          : [];
-
-        setTasks(transformedTasks);
-
-        if (
-          selectedTaskId &&
-          !transformedTasks?.find((t) => t.id === selectedTaskId)
-        ) {
-          setSelectedTaskId(null);
-          setActivePanel(null);
-        }
-      } catch (error) {
-        console.error("Error loading tasks:", error);
-        setError(
-          error instanceof Error ? error.message : "Failed to load tasks",
-        );
-        toast.error("Error loading tasks");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchTasks();
-  }, [selectedTaskId]);
+  }, [selectedLocalTaskId, getTaskById, tasks]);
 
   const handlePanelClose = () => {
     setActivePanel(null);
-    setSelectedTaskId(null);
+    setSelectedLocalTaskId(null);
   };
 
   const handleFilterClick = () => {
     setActivePanel(activePanel === "filter" ? null : "filter");
-    if (selectedTaskId) {
-      setSelectedTaskId(null);
+    if (activePanel !== "filter") {
+      setSelectedLocalTaskId(null);
     }
   };
 
   const handleTaskSelect = (task: Task) => {
-    setActivePanel("property");
-    setSelectedTask(task);
+    setSelectedLocalTaskId(task.id);
   };
 
   const handleTaskUpdate = async (updatedTask: Task) => {
-    try {
-      setIsLoading(true);
-
-      const supabaseTask = mapTaskToSupabase(updatedTask);
-      console.log({ supabaseTask });
-      const { error } = await supabase
-        .from("tasks")
-        .update(supabaseTask)
-        .eq("id", updatedTask.id);
-
-      if (error) throw error;
-
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) throw new Error("No authenticated user found");
-
-      const { data: refreshedTasks, error: refreshError } = await supabase
-        .from("tasks")
-        .select("*")
-        .eq("assignee", user.id)
-        .order("created_at", { ascending: false });
-
-      if (refreshError) throw refreshError;
-
-      const transformedTasks: Task[] =
-        refreshedTasks?.map((task) => mapTaskFromSupabase(task, user.id)) || [];
-
-      setTasks(transformedTasks);
-      toast.success("Task updated successfully");
-    } catch (error) {
-      console.error("Error updating task:", error);
-      toast.error("Error updating task");
-    } finally {
-      setIsLoading(false);
+    const result = await updateTaskContext(updatedTask.id, updatedTask);
+    if (result) {
+      if (selectedTaskForSheet && selectedTaskForSheet.id === result.id) {
+        setSelectedTaskForSheet(result);
+      }
+      toast.success("Task updated successfully via context");
+    } else {
+      toast.error("Failed to update task via context");
     }
   };
 
@@ -204,6 +143,24 @@ export const Tasks: React.FC = () => {
         return { title: "Tasks", icon: <Filter />, addItemLabel: "Add Task" };
     }
   };
+
+  if (tasksLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-purple-500"></div>
+      </div>
+    );
+  }
+
+  if (tasksError) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-red-500 p-4 bg-red-100 border border-red-400 rounded">
+          Error loading tasks: {tasksError}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -260,37 +217,26 @@ export const Tasks: React.FC = () => {
 
         <div className="flex-1 flex overflow-hidden">
           <div className="flex-1 overflow-auto">
-            {isLoading ? (
-              <div className="flex items-center justify-center h-full">
-                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-500"></div>
-              </div>
-            ) : (
-              <>
-                <TabsContent value="timebox" className="flex-1 m-0">
-                  <PtbTimeBox
-                    theme={theme}
-                    tasks={tasks}
-                    setTasks={setTasks}
-                    onTaskSelect={handleTaskSelect}
-                    selectedTaskId={selectedTask?.id}
-                    onTaskUpdate={handleTaskUpdate}
-                  />
-                </TabsContent>
-                <TabsContent value="lists" className="flex-1 m-0">
-                  <TaskList
-                    theme={theme}
-                    isAddListOpen={isAddListOpen}
-                    setIsAddListOpen={setIsAddListOpen}
-                    lists={lists}
-                    setLists={setLists}
-                    onTaskSelect={handleTaskSelect}
-                  />
-                </TabsContent>
-                <TabsContent value="calendar" className="flex-1 m-0">
-                  <CalendarView theme={theme} onTaskSelect={handleTaskSelect} />
-                </TabsContent>
-              </>
-            )}
+            <TabsContent value="timebox" className="flex-1 m-0">
+              <PtbTimeBox
+                theme={theme}
+                onTaskSelect={handleTaskSelect}
+                selectedTaskId={selectedLocalTaskId}
+              />
+            </TabsContent>
+            <TabsContent value="lists" className="flex-1 m-0">
+              <TaskList
+                theme={theme}
+                isAddListOpen={isAddListOpen}
+                setIsAddListOpen={setIsAddListOpen}
+                lists={lists}
+                setLists={setLists}
+                onTaskSelect={handleTaskSelect}
+              />
+            </TabsContent>
+            <TabsContent value="calendar" className="flex-1 m-0">
+              <CalendarView theme={theme} onTaskSelect={handleTaskSelect} />
+            </TabsContent>
           </div>
 
           {activePanel === "filter" && (
@@ -309,7 +255,7 @@ export const Tasks: React.FC = () => {
             </div>
           )}
 
-          {activePanel === "property" && selectedTask && (
+          {activePanel === "property" && selectedTaskForSheet && (
             <div
               className={cn(
                 "transition-transform duration-300 ease-in-out transform",
@@ -320,8 +266,8 @@ export const Tasks: React.FC = () => {
               )}
             >
               <PropertySheet
-                task={selectedTask}
-                onClose={() => setSelectedTask(null)}
+                task={selectedTaskForSheet}
+                onClose={handlePanelClose}
                 onTaskUpdate={handleTaskUpdate}
                 theme={theme}
                 lists={lists}
@@ -332,5 +278,13 @@ export const Tasks: React.FC = () => {
         </div>
       </Tabs>
     </div>
+  );
+};
+
+export const Tasks: React.FC = () => {
+  return (
+    <TaskProvider>
+      <TasksComponent />
+    </TaskProvider>
   );
 };

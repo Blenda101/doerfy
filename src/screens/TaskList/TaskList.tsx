@@ -1,14 +1,14 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { TaskItem } from "../../components/TaskItem";
 import { ListHeader } from "../../components/ListHeader";
 import { InlineTaskEditor } from "../../components/InlineTaskEditor";
 import { Theme } from "../../utils/theme";
-import { useTasks } from "../../hooks/useTasks";
 import { List } from "../../hooks/useLists";
 import { AddListDialog } from "../../components/AddListDialog";
 import { Task } from "../../types/task";
 import { supabase } from "../../utils/supabaseClient";
 import { toast } from "react-hot-toast";
+import { useTaskContext } from "../../hooks/useTaskContext";
 
 interface TaskListProps {
   theme?: Theme;
@@ -27,25 +27,60 @@ export const TaskList: React.FC<TaskListProps> = ({
   setLists,
   onTaskSelect,
 }) => {
-  const [editingList, setEditingList] = useState<List | null>(null);
   const {
-    isLoading,
-    error,
-    editingTaskId,
-    newTaskList,
-    newTaskTitle,
-    activeList,
-    tasksByList,
-    setEditingTaskId,
-    setNewTaskList,
-    setNewTaskTitle,
-    setActiveList,
-    handleTaskComplete,
-    handleTaskUpdate,
-    handleNewTask,
-    handleTaskTitleUpdate,
-    handleDeleteTask,
-  } = useTasks({ lists });
+    tasks,
+    createTask,
+    updateTask,
+    deleteTask,
+    isLoading: tasksLoadingGlobal,
+    error: tasksErrorGlobal,
+  } = useTaskContext();
+
+  const [editingList, setEditingList] = useState<List | null>(null);
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const [newTaskListId, setNewTaskListId] = useState<string | null>(null);
+  const [newTaskTitle, setNewTaskTitle] = useState("");
+  const [activeListId, setActiveListId] = useState<string | null>(null);
+
+  const tasksByList = useMemo(() => {
+    return lists.reduce((acc, list) => {
+      acc[list.id] = {
+        list,
+        tasks: tasks.filter(
+          (task) => task.listId === list.id && task.showInList,
+        ),
+      };
+      return acc;
+    }, {} as Record<string, { list: List; tasks: Task[] }>);
+  }, [lists, tasks]);
+
+  const handleTaskComplete = async (taskId: string) => {
+    await updateTask(taskId, { timeStage: "done" });
+  };
+
+  const handleLocalNewTask = async (listId: string, title: string) => {
+    if (!title.trim()) {
+      toast.error("Task title cannot be empty.");
+      return;
+    }
+    const newTaskData: Partial<Task> = {
+      title: title.trim(),
+      listId,
+      showInList: true,
+      timeStage: "queue",
+    };
+    const created = await createTask(newTaskData);
+    if (created) {
+      setNewTaskTitle("");
+      setEditingTaskId(null);
+      setNewTaskListId(null);
+    }
+  };
+
+  const handleLocalTaskTitleUpdate = async (taskId: string, title: string) => {
+    await updateTask(taskId, { title: title.trim() });
+    setEditingTaskId(null);
+  };
 
   const openAddListDialog = () => {
     setEditingList(null);
@@ -60,54 +95,51 @@ export const TaskList: React.FC<TaskListProps> = ({
   const handleDeleteList = async (listId: string) => {
     if (
       !window.confirm(
-        "Are you sure you want to delete this list and all its tasks?",
+        "Are you sure you want to delete this list and all its tasks? This action cannot be undone.",
       )
     ) {
       return;
     }
-
     try {
-      const { error: tasksError } = await supabase
-        .from("tasks")
-        .delete()
-        .eq("list_id", listId);
-
-      if (tasksError) {
-        throw tasksError;
+      const tasksInList = tasks.filter((task) => task.listId === listId);
+      for (const task of tasksInList) {
+        await deleteTask(task.id);
       }
 
-      const { error: listError } = await supabase
+      const { error: listDeletionError } = await supabase
         .from("lists")
         .delete()
         .eq("id", listId);
 
-      if (listError) {
-        throw listError;
-      }
+      if (listDeletionError) throw listDeletionError;
 
       setLists(lists.filter((list) => list.id !== listId));
-      if (activeList === listId) {
-        setActiveList(null);
+      if (activeListId === listId) {
+        setActiveListId(null);
       }
-      toast.success("List deleted successfully");
-    } catch (error) {
-      console.error("Error deleting list:", error);
-      toast.error("Failed to delete list. Check console for details.");
+      toast.success("List and its tasks deleted successfully");
+    } catch (err) {
+      console.error("Error deleting list and tasks:", err);
+      const message =
+        err instanceof Error ? err.message : "Failed to delete list.";
+      toast.error(message);
     }
   };
 
-  if (isLoading) {
+  if (tasksLoadingGlobal) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-[200px]">
         <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-500"></div>
       </div>
     );
   }
 
-  if (error) {
+  if (tasksErrorGlobal) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-red-500">{error}</div>
+      <div className="flex items-center justify-center min-h-[200px]">
+        <div className="text-red-500 p-3 bg-red-50 border border-red-300 rounded">
+          Error: {tasksErrorGlobal}
+        </div>
       </div>
     );
   }
@@ -126,35 +158,35 @@ export const TaskList: React.FC<TaskListProps> = ({
                     listName={list.name}
                     taskCount={listTasks.length}
                     theme={theme}
-                    isActive={activeList === list.id}
-                    onListClick={setActiveList}
+                    isActive={activeListId === list.id}
+                    onListClick={setActiveListId}
                     onAddTask={() => {
-                      setEditingTaskId("new");
-                      setActiveList(list.id);
-                      setNewTaskList(list.id);
+                      setNewTaskListId(list.id);
+                      setEditingTaskId("new-" + list.id);
                       setNewTaskTitle("");
+                      setActiveListId(list.id);
                     }}
                     onEditList={() => openEditListDialog(list)}
                     onDeleteList={() => handleDeleteList(list.id)}
                   />
 
-                  <div className="space-y-2">
-                    {editingTaskId === "new" && newTaskList === list.id && (
-                      <InlineTaskEditor
-                        value={newTaskTitle}
-                        onChange={setNewTaskTitle}
-                        onSave={() => {
-                          const trimmed = newTaskTitle.trim();
-                          if (!trimmed) return;
-                          handleNewTask(list.id, trimmed);
-                        }}
-                        onCancel={() => {
-                          setEditingTaskId(null);
-                          setNewTaskTitle("");
-                        }}
-                        className="flex-1"
-                      />
-                    )}
+                  <div className="space-y-2 mt-2">
+                    {editingTaskId === "new-" + list.id &&
+                      newTaskListId === list.id && (
+                        <InlineTaskEditor
+                          value={newTaskTitle}
+                          onChange={setNewTaskTitle}
+                          onSave={() => {
+                            handleLocalNewTask(list.id, newTaskTitle);
+                          }}
+                          onCancel={() => {
+                            setEditingTaskId(null);
+                            setNewTaskListId(null);
+                            setNewTaskTitle("");
+                          }}
+                          className="flex-1"
+                        />
+                      )}
 
                     {listTasks.map((task) => (
                       <TaskItem
@@ -165,18 +197,21 @@ export const TaskList: React.FC<TaskListProps> = ({
                         isEditing={editingTaskId === task.id}
                         newTaskTitle={newTaskTitle}
                         onTaskSelect={() => onTaskSelect(task)}
-                        onTaskComplete={handleTaskComplete}
+                        onTaskComplete={() => handleTaskComplete(task.id)}
                         onEditStart={(taskId) => {
                           setEditingTaskId(taskId);
                           setNewTaskTitle(task.title);
+                          setNewTaskListId(null);
                         }}
                         onTitleChange={setNewTaskTitle}
-                        onTitleUpdate={handleTaskTitleUpdate}
+                        onTitleUpdate={(newTitle) =>
+                          handleLocalTaskTitleUpdate(task.id, newTitle)
+                        }
                         onEditCancel={() => {
                           setEditingTaskId(null);
-                          setNewTaskTitle(task.title);
+                          setNewTaskTitle("");
                         }}
-                        onDeleteTask={handleDeleteTask}
+                        onDeleteTask={() => deleteTask(task.id)}
                       />
                     ))}
                   </div>
