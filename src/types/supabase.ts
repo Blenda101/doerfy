@@ -336,7 +336,6 @@ export type Database = {
           show_in_time_box: boolean | null
           stage_entry_date: string
           status: string | null
-          story: string | null
           story_id: string | null
           timestage: string
           title: string
@@ -375,7 +374,6 @@ export type Database = {
           show_in_time_box?: boolean | null
           stage_entry_date?: string
           status?: string | null
-          story?: string | null
           story_id?: string | null
           timestage: string
           title: string
@@ -414,7 +412,6 @@ export type Database = {
           show_in_time_box?: boolean | null
           stage_entry_date?: string
           status?: string | null
-          story?: string | null
           story_id?: string | null
           timestage?: string
           title?: string

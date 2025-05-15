@@ -14,7 +14,7 @@ import { ListIcon } from "lucide-react";
 import { cn } from "../lib/utils";
 import { supabase } from "../utils/supabaseClient";
 import { toast } from "react-hot-toast";
-import { List } from "../hooks/useTasks";
+import { List } from "../hooks/useLists";
 
 interface AddListDialogProps {
   isOpen: boolean;

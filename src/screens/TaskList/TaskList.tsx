@@ -82,6 +82,8 @@ export const TaskList: React.FC<TaskListProps> = ({
                       setNewTaskList(list.id);
                       setNewTaskTitle("");
                     }}
+                    onEditList={() => console.log("Edit list clicked")}
+                    onDeleteList={() => console.log("Delete list clicked")}
                   />
 
                   <div className="space-y-2">

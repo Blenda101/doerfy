@@ -46,7 +46,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({
   return (
     <div
       className={cn(
-        "flex items-start space-x-2 p-2 rounded-lg",
+        "flex items-start space-x-2 p-2 rounded-lg group",
         "hover:bg-gray-50 dark:hover:bg-gray-800",
         "cursor-pointer",
         isSelected && "bg-gray-50 dark:bg-gray-800",
@@ -79,7 +79,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({
           >
             {task.title}
           </span>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 group-hover:opacity-100 opacity-0 transition-opacity duration-200">
             <TaskHoverCard task={task}>
               <InfoIcon
                 size={16}

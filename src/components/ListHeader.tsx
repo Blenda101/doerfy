@@ -1,9 +1,15 @@
 import React from "react";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
-import { Plus } from "lucide-react";
+import { Edit, MoreHorizontal, Plus, Trash2 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { Theme } from "../utils/theme";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
 
 interface ListHeaderProps {
   listId: string;
@@ -13,6 +19,8 @@ interface ListHeaderProps {
   isActive: boolean;
   onListClick: (listId: string) => void;
   onAddTask: () => void;
+  onEditList: (listId: string) => void;
+  onDeleteList: (listId: string) => void;
 }
 
 export const ListHeader: React.FC<ListHeaderProps> = ({
@@ -23,9 +31,11 @@ export const ListHeader: React.FC<ListHeaderProps> = ({
   isActive,
   onListClick,
   onAddTask,
+  onEditList,
+  onDeleteList,
 }) => {
   return (
-    <div className="flex items-center border-b pb-4 dark:border-slate-700">
+    <div className="flex items-center border-b pb-4 dark:border-slate-700 pl-[5px] pr-[9px]">
       <div
         className="flex items-center flex-1 cursor-pointer"
         onClick={() => onListClick(listId)}
@@ -60,6 +70,42 @@ export const ListHeader: React.FC<ListHeaderProps> = ({
       >
         <Plus className="w-4 h-4" />
       </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 w-6 p-0"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <MoreHorizontal
+              size={16}
+              className="text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300"
+            />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem
+            onClick={(e) => {
+              e.stopPropagation();
+              onEditList(listId);
+            }}
+          >
+            <Edit className="w-4 h-4 mr-2" />
+            Edit
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            className="text-red-600 dark:text-red-400"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDeleteList(listId);
+            }}
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            Delete
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 };
