@@ -79,7 +79,7 @@ const CalendarView: React.FC<CalendarProps> = (props) => {
         updatedAt: new Date().toISOString(),
       };
 
-      await updateTask(updatedTask);
+      await updateTask(updatedTask.id, updatedTask);
     } catch (error) {
       console.error("Error moving task:", error);
     }
@@ -111,7 +111,7 @@ const CalendarView: React.FC<CalendarProps> = (props) => {
         updatedAt: new Date().toISOString(),
       };
       console.log({ updatedTask });
-      await updateTask(updatedTask);
+      await updateTask(updatedTask.id, updatedTask);
     } catch (error) {
       console.error("Error resizing task:", error);
     }
@@ -141,7 +141,12 @@ const CalendarView: React.FC<CalendarProps> = (props) => {
     if (!selectedSlot || !newTaskTitle.trim()) return;
 
     try {
-      await createTask(newTaskTitle.trim(), selectedSlot);
+      await createTask(
+        {
+          title: newTaskTitle.trim(),
+        },
+        selectedSlot,
+      );
       setNewTaskTitle("");
       setIsDialogOpen(false);
     } catch (error) {
@@ -154,7 +159,7 @@ const CalendarView: React.FC<CalendarProps> = (props) => {
   }
 
   if (error) {
-    return <div>Error: {error.message}</div>;
+    return <div>Error: {error}</div>;
   }
 
   return (
