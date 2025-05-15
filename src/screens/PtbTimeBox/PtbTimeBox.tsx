@@ -15,7 +15,7 @@ import { supabase } from "../../utils/supabaseClient";
 interface PtbTimeBoxProps {
   theme?: Theme;
   tasks: Task[];
-  onTaskSelect?: (taskId: string) => void;
+  onTaskSelect?: (task: Task) => void;
   selectedTaskId?: string | null;
   onTaskUpdate?: (task: Task) => void;
 }
@@ -91,7 +91,7 @@ export const PtbTimeBox: React.FC<PtbTimeBoxProps> = ({
 
   const handleTaskSelect = (task: Task) => {
     if (editingTaskId !== task.id) {
-      onTaskSelect?.(task.id);
+      onTaskSelect?.(task);
       setActiveTimeStage(task.timeStage as TimeBoxStage);
       setEditingTaskId(null);
     }
@@ -113,7 +113,7 @@ export const PtbTimeBox: React.FC<PtbTimeBoxProps> = ({
 
       const updatedTasks = [newTask, ...tasks];
       await saveTasks(updatedTasks);
-      onTaskSelect?.(newTask.id);
+      onTaskSelect?.(newTask);
       setActiveTimeStage(timeStage);
     } catch (error) {
       console.error("Error creating new task:", error);
@@ -189,7 +189,7 @@ export const PtbTimeBox: React.FC<PtbTimeBoxProps> = ({
 
       const updatedTasks = [newTask, ...tasks];
       await saveTasks(updatedTasks);
-      onTaskSelect?.(newTask.id);
+      onTaskSelect?.(newTask);
       setActiveTimeStage(timeStage as TimeBoxStage);
 
       const { error } = await supabase

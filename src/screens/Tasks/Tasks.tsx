@@ -1,8 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-  Tabs,
-  TabsContent,
-} from "../../components/ui/tabs";
+import { Tabs, TabsContent } from "../../components/ui/tabs";
 import { Sidebar } from "../../components/Sidebar";
 import { TasksHeader } from "../../components/TasksHeader";
 import { FilterHeader } from "../../components/FilterHeader";
@@ -137,14 +134,9 @@ export const Tasks: React.FC = () => {
     }
   };
 
-  const handleTaskSelect = (taskId: string) => {
-    if (activePanel === "property" && selectedTaskId === taskId) {
-      setActivePanel(null);
-      setSelectedTaskId(null);
-    } else {
-      setActivePanel("property");
-      setSelectedTaskId(taskId);
-    }
+  const handleTaskSelect = (task: Task) => {
+    setActivePanel("property");
+    setSelectedTask(task);
   };
 
   const handleTaskUpdate = async (updatedTask: Task) => {
@@ -277,12 +269,7 @@ export const Tasks: React.FC = () => {
                   <PtbTimeBox
                     theme={theme}
                     tasks={tasks}
-                    onTaskSelect={(taskId) => {
-                      setSelectedTask(
-                        tasks.find((t) => t.id === taskId) || null,
-                      );
-                      console.log(tasks);
-                    }}
+                    onTaskSelect={handleTaskSelect}
                     selectedTaskId={selectedTask?.id}
                     onTaskUpdate={handleTaskUpdate}
                   />
@@ -294,14 +281,11 @@ export const Tasks: React.FC = () => {
                     setIsAddListOpen={setIsAddListOpen}
                     lists={lists}
                     setLists={setLists}
-                    onTaskSelect={(task) => setSelectedTask(task)}
+                    onTaskSelect={handleTaskSelect}
                   />
                 </TabsContent>
                 <TabsContent value="calendar" className="flex-1 m-0">
-                  <CalendarView
-                    theme={theme}
-                    onTaskSelect={(task) => setSelectedTask(task)}
-                  />
+                  <CalendarView theme={theme} onTaskSelect={handleTaskSelect} />
                 </TabsContent>
               </>
             )}
@@ -323,7 +307,7 @@ export const Tasks: React.FC = () => {
             </div>
           )}
 
-          {selectedTask && (
+          {activePanel === "property" && selectedTask && (
             <div
               className={cn(
                 "transition-transform duration-300 ease-in-out transform",
