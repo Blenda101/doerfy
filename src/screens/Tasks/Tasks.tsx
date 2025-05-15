@@ -144,6 +144,7 @@ export const Tasks: React.FC = () => {
       setIsLoading(true);
 
       const supabaseTask = mapTaskToSupabase(updatedTask);
+      console.log({ supabaseTask });
       const { error } = await supabase
         .from("tasks")
         .update(supabaseTask)
@@ -269,6 +270,7 @@ export const Tasks: React.FC = () => {
                   <PtbTimeBox
                     theme={theme}
                     tasks={tasks}
+                    setTasks={setTasks}
                     onTaskSelect={handleTaskSelect}
                     selectedTaskId={selectedTask?.id}
                     onTaskUpdate={handleTaskUpdate}

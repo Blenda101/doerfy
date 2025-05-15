@@ -104,9 +104,12 @@ export function mapTaskToSupabase(task: Task): TaskFromSupabase {
     highlighted: task.highlighted,
     status: task.status ?? null,
     priority: task.priority,
-    updated_at: task.updatedAt,
+    updated_at: task.updatedAt || new Date().toISOString(),
     schedule_date: task.schedule?.date?.toISOString() ?? null,
-    schedule_time: task.schedule?.time ?? null,
+    schedule_time:
+      task.schedule?.time === "" || !task.schedule?.time
+        ? null
+        : task.schedule?.time,
     lead_days: task.schedule?.leadDays ?? 0,
     lead_hours: task.schedule?.leadHours ?? 0,
     duration_days: task.schedule?.durationDays ?? 0,

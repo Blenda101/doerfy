@@ -161,7 +161,7 @@ export const useTasks = ({ lists }: UseTasksProps): UseTasksReturn => {
           priority: updatedTask.priority,
           energy: updatedTask.energy,
           location: updatedTask.location,
-          story: updatedTask.story,
+          story_id: updatedTask.story,
           labels: updatedTask.labels,
           show_in_time_box: updatedTask.showInTimeBox,
           show_in_list: updatedTask.showInList,

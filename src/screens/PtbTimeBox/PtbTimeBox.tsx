@@ -15,6 +15,7 @@ import { supabase } from "../../utils/supabaseClient";
 interface PtbTimeBoxProps {
   theme?: Theme;
   tasks: Task[];
+  setTasks: (tasks: Task[]) => void;
   onTaskSelect?: (task: Task) => void;
   selectedTaskId?: string | null;
   onTaskUpdate?: (task: Task) => void;
@@ -23,6 +24,7 @@ interface PtbTimeBoxProps {
 export const PtbTimeBox: React.FC<PtbTimeBoxProps> = ({
   theme = "light",
   tasks,
+  setTasks,
   onTaskSelect,
   selectedTaskId,
   onTaskUpdate,
@@ -113,6 +115,7 @@ export const PtbTimeBox: React.FC<PtbTimeBoxProps> = ({
 
       const updatedTasks = [newTask, ...tasks];
       await saveTasks(updatedTasks);
+      setTasks(updatedTasks);
       onTaskSelect?.(newTask);
       setActiveTimeStage(timeStage);
     } catch (error) {
@@ -130,6 +133,7 @@ export const PtbTimeBox: React.FC<PtbTimeBoxProps> = ({
           : task,
       );
       await saveTasks(updatedTasks);
+      setTasks(updatedTasks);
       setEditingTaskId(null);
     } else {
       setEditingTaskId(taskId);

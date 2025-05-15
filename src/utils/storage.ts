@@ -3,6 +3,7 @@ import { TimeBox } from "../types/timeBox";
 import { BannerConfig } from "../components/BannerManager";
 import { supabase } from "./supabaseClient";
 import { defaultTimeBoxes } from "../data/timeBoxes";
+import { mapTaskFromSupabase, mapTaskToSupabase } from "./taskMapper";
 
 const STORAGE_KEYS = {
   TIME_BOXES: "doerfy_timeboxes",
@@ -37,41 +38,7 @@ export async function saveTasks(tasks: Task[]): Promise<void> {
       throw new Error("No authenticated user found");
     }
 
-    const currentTime = new Date().toISOString();
-
-    const tasksToUpsert: TaskFromSupabase[] = tasks.map((task) => ({
-      id: task.id,
-      title: task.title,
-      description: task.description,
-      timestage: task.timeStage,
-      stage_entry_date: task.stageEntryDate,
-      assignee: user.id,
-      list_id: task.listId,
-      priority: task.priority,
-      energy: task.energy,
-      location: task.location,
-      story: task.story,
-      labels: task.labels,
-      icon: task.icon,
-      show_in_time_box: task.showInTimeBox ?? true,
-      show_in_list: task.showInList ?? true,
-      show_in_calendar: task.showInCalendar ?? false,
-      highlighted: task.highlighted,
-      status: task.status,
-      aging_status: task.agingStatus,
-      created_at: task.createdAt || currentTime,
-      updated_at: currentTime,
-      created_by: user.id,
-      duration_days: task.schedule?.durationDays || 0,
-      duration_hours: task.schedule?.durationHours || 0,
-      lead_days: task.schedule?.leadDays || 0,
-      lead_hours: task.schedule?.leadHours || 0,
-      schedule_date: task.schedule?.date?.toISOString()! || "",
-      schedule_time: task.schedule?.time! || "",
-      recurring: task.schedule?.recurring?.type || null,
-      story_id: task.story,
-    }));
-
+    const tasksToUpsert = tasks.map((task) => mapTaskToSupabase(task));
     const { error } = await supabase.from("tasks").upsert(tasksToUpsert, {
       onConflict: "id",
       ignoreDuplicates: false,
@@ -104,48 +71,9 @@ export async function loadTasks(): Promise<Task[]> {
 
     if (taskError) throw taskError;
     console.log({ db: tasks });
-    return (tasks || []).map((task: TaskFromSupabase) => ({
-      id: task.id,
-      title: task.title,
-      description: task.description,
-      timeStage: task.timestage,
-      stageEntryDate: task.stage_entry_date,
-      assignee: task.assignee,
-      listId: task.list_id,
-      priority: task.priority,
-      energy: task.energy,
-      location: task.location,
-      story: task.story,
-      labels: task.labels || [],
-      icon: task.icon,
-      showInTimeBox: task.show_in_time_box ?? true,
-      showInList: task.show_in_list ?? true,
-      showInCalendar: task.show_in_calendar ?? false,
-      highlighted: task.highlighted,
-      status: task.status,
-      agingStatus: task.aging_status,
-      createdAt: task.created_at,
-      updatedAt: task.updated_at,
-      createdBy: task.created_by,
-
-      checklistItems: [],
-      comments: [],
-      attachments: [],
-      history: [],
-      schedule: task.show_in_calendar
-        ? {
-            enabled: true,
-            date: task.schedule_date ? new Date(task.schedule_date) : null,
-            time: task.schedule_time || "09:00",
-            leadDays: task.lead_days,
-            leadHours: task.lead_hours,
-            durationDays: task.duration_days,
-            durationHours: task.duration_hours,
-            alarmEnabled: false,
-            recurring: undefined,
-          }
-        : null,
-    }));
+    return (tasks || []).map((task: TaskFromSupabase) =>
+      mapTaskFromSupabase(task, user.id),
+    );
   } catch (error) {
     console.error("Error loading tasks from Supabase:", error);
     throw error;
@@ -190,15 +118,19 @@ export async function saveBannerConfig(config: BannerConfig): Promise<void> {
 
     const existingConfig = existingConfigs || {};
 
-    function mergeUniqueByKey<T>(arr1: T[] = [], arr2: T[] = [], key: keyof T): T[] {
+    function mergeUniqueByKey<T>(
+      arr1: T[] = [],
+      arr2: T[] = [],
+      key: keyof T,
+    ): T[] {
       const map = new Map<string | number, T>();
-      [...arr1, ...arr2].forEach(item => {
+      [...arr1, ...arr2].forEach((item) => {
         const keyValue = item[key];
         map.set(keyValue as string | number, item);
       });
       return Array.from(map.values());
     }
-    
+
     const mergedConfig = {
       user_id: user.id,
       images: mergeUniqueByKey(existingConfig.images, config.images, "url"),

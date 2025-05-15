@@ -14,12 +14,7 @@ import { cn } from "../lib/utils";
 import { Theme } from "../utils/theme";
 import { supabase } from "../utils/supabaseClient";
 import debounce from "lodash/debounce";
-import {
-  StarIcon,
-  MoreHorizontalIcon,
-  InfoIcon,
-  User,
-} from "lucide-react";
+import { StarIcon, MoreHorizontalIcon, InfoIcon, User } from "lucide-react";
 import { Sheet } from "./Sheet";
 import { Editor } from "./forms/Editor";
 import { List } from "../hooks/useLists";
@@ -90,7 +85,9 @@ export const PropertySheet: React.FC<PropertySheetProps> = ({
       ...updates,
       updatedAt: new Date().toISOString(),
     };
-    debouncedUpdate(updatedTask);
+    onTaskUpdate(updatedTask);
+
+    // debouncedUpdate(updatedTask);
   };
 
   const handleTitleChange = (newTitle: string) => {
@@ -98,6 +95,7 @@ export const PropertySheet: React.FC<PropertySheetProps> = ({
   };
 
   const handleLabelsChange = (newLabels: string[]) => {
+    console.log(newLabels);
     handleTaskUpdate({ labels: newLabels });
   };
 
