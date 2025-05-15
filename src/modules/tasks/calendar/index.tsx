@@ -1,4 +1,4 @@
-import React, { useRef, useState, useMemo } from "react";
+import React, { useRef, useState } from "react";
 import {
   Calendar as BigCalendar,
   dateFnsLocalizer,
@@ -26,7 +26,6 @@ import { Label } from "../../../components/ui/label";
 import { getDateInterval, getSlotInterval } from "./utils/getDateInterval";
 import { Task } from "../../../types/task";
 import { useTaskContext } from "../../../hooks/useTaskContext";
-import { toast } from "react-hot-toast";
 
 const locales = {
   "en-US": enUS,
@@ -38,22 +37,23 @@ const localizer = dateFnsLocalizer({
   getDay,
   locales,
 });
-const DnDCalendar = withDragAndDrop<CalendarEvent>(BigCalendar);
+const Calendar = withDragAndDrop<CalendarEvent>(BigCalendar);
 
 const CalendarView: React.FC<CalendarProps> = (props) => {
   const { theme = "light", onTaskSelect } = props;
   const { tasks, isLoading, error, createTask, updateTask } = useTaskContext();
-
   const [view, setView] = useState<View>(Views.DAY);
   const [date, setDate] = useState(new Date());
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedSlotInfo, setSelectedSlotInfo] = useState<SlotInfo | null>(
-    null,
-  );
+  const [selectedSlot, setSelectedSlot] = useState<{
+    start: Date;
+    end: Date;
+  } | null>(null);
   const [newTaskTitle, setNewTaskTitle] = useState("");
 
   const calendarRef = useRef<HTMLDivElement>(null);
 
+  // Handle event drag and drop
   const moveEvent = async ({
     event,
     start,
@@ -66,26 +66,26 @@ const CalendarView: React.FC<CalendarProps> = (props) => {
     try {
       const { schedule_date, schedule_time, duration_days, duration_hours } =
         getDateInterval({ start, end });
-
-      const updatedSchedulePayload = {
-        date: new Date(schedule_date),
-        time: schedule_time,
-        durationDays: duration_days,
-        durationHours: duration_hours,
-        enabled: true,
+      const updatedTask = {
+        ...event.task,
+        schedule: {
+          ...event.task.schedule,
+          date: new Date(schedule_date),
+          time: schedule_time,
+          durationDays: duration_days,
+          durationHours: duration_hours,
+          enabled: true,
+        },
+        updatedAt: new Date().toISOString(),
       };
 
-      await updateTask(event.task.id, {
-        schedule: updatedSchedulePayload,
-        showInCalendar: true,
-      });
-      toast.success("Task moved successfully!");
-    } catch (err) {
-      console.error("Error moving task:", err);
-      toast.error(err instanceof Error ? err.message : "Failed to move task.");
+      await updateTask(updatedTask);
+    } catch (error) {
+      console.error("Error moving task:", error);
     }
   };
 
+  // Handle event resize
   const resizeEvent = async ({
     event,
     start,
@@ -98,105 +98,72 @@ const CalendarView: React.FC<CalendarProps> = (props) => {
     try {
       const { schedule_date, schedule_time, duration_days, duration_hours } =
         getDateInterval({ start, end });
-
-      const updatedSchedulePayload = {
-        date: new Date(schedule_date),
-        time: schedule_time,
-        durationDays: duration_days,
-        durationHours: duration_hours,
-        enabled: true,
+      const updatedTask: Task = {
+        ...event.task,
+        schedule: {
+          ...event.task.schedule,
+          date: new Date(schedule_date),
+          time: schedule_time,
+          durationDays: duration_days,
+          durationHours: duration_hours,
+          enabled: true,
+        },
+        updatedAt: new Date().toISOString(),
       };
-
-      await updateTask(event.task.id, {
-        schedule: updatedSchedulePayload,
-        showInCalendar: true,
-      });
-      toast.success("Task resized successfully!");
-    } catch (err) {
-      console.error("Error resizing task:", err);
-      toast.error(
-        err instanceof Error ? err.message : "Failed to resize task.",
-      );
+      console.log({ updatedTask });
+      await updateTask(updatedTask);
+    } catch (error) {
+      console.error("Error resizing task:", error);
     }
   };
 
-  const calendarEvents: CalendarEvent[] = useMemo(() => {
-    return tasks
-      .filter(
-        (task) =>
-          task.schedule &&
-          task.schedule?.enabled &&
-          task.schedule.date &&
-          task.showInCalendar,
-      )
-      .map((task: Task) => ({
-        id: task.id,
-        title: task.title,
-        ...getSlotInterval(task.schedule!),
-        task,
-      }));
-  }, [tasks]);
+  // Convert tasks to calendar events
+  const events: CalendarEvent[] = tasks
+    .filter(
+      (task) => task.schedule && task.schedule?.enabled && task.schedule.date,
+    )
+    .map((task) => ({
+      id: task.id,
+      title: task.title,
+      ...getSlotInterval(task.schedule!),
+      task,
+    }));
 
-  const handleSelectSlot = (slotInfo: SlotInfo) => {
-    setSelectedSlotInfo(slotInfo);
-    setNewTaskTitle("");
+  console.log({ events, tasks });
+
+  const handleSelectSlot = ({ start, end }: SlotInfo) => {
+    setSelectedSlot({ start, end });
     setIsDialogOpen(true);
+    console.log({ start, end, value: getDateInterval({ start, end }) });
   };
 
-  const handleCreateTaskFromSlot = async () => {
-    if (!selectedSlotInfo || !newTaskTitle.trim()) return;
+  const handleCreateTask = async () => {
+    if (!selectedSlot || !newTaskTitle.trim()) return;
 
     try {
-      const taskDataToCreate: Partial<
-        Omit<Task, "id" | "createdAt" | "updatedAt" | "createdBy" | "assignee">
-      > = {
-        title: newTaskTitle.trim(),
-        showInCalendar: true,
-      };
-
-      await createTask(taskDataToCreate, {
-        start: selectedSlotInfo.start,
-        end: selectedSlotInfo.end,
-      });
+      await createTask(newTaskTitle.trim(), selectedSlot);
       setNewTaskTitle("");
       setIsDialogOpen(false);
-      setSelectedSlotInfo(null);
-      toast.success("Task created on calendar!");
-    } catch (err) {
-      console.error("Error creating task from slot:", err);
-      toast.error(
-        err instanceof Error
-          ? err.message
-          : "Failed to create task on calendar.",
-      );
+    } catch (error) {
+      console.error("Error creating task:", error);
     }
   };
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-500"></div>
-      </div>
-    );
+    return <div>Loading...</div>;
   }
 
   if (error) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-red-500 p-3 bg-red-50 border border-red-300 rounded">
-          Error: {error}
-        </div>
-      </div>
-    );
+    return <div>Error: {error.message}</div>;
   }
 
   return (
     <div className="relative flex-1 p-6" ref={calendarRef}>
-      <DnDCalendar
+      <Calendar
         selectable
         resizable
         localizer={localizer}
-        events={calendarEvents}
+        events={events}
         startAccessor="start"
         endAccessor="end"
         views={[Views.MONTH, Views.WEEK, Views.DAY]}
@@ -206,9 +173,9 @@ const CalendarView: React.FC<CalendarProps> = (props) => {
         onNavigate={setDate}
         components={{
           event: CustomEvent,
-          toolbar: (toolbarProps) => (
+          toolbar: (props) => (
             <CustomToolbar
-              toolbar={toolbarProps}
+              toolbar={props}
               view={view}
               onViewChange={setView}
               theme={theme}
@@ -220,11 +187,11 @@ const CalendarView: React.FC<CalendarProps> = (props) => {
         onEventDrop={moveEvent as any}
         onEventResize={resizeEvent as any}
         draggableAccessor={() => true}
-        slotPropGetter={(currentDate) => {
+        slotPropGetter={(date) => {
           if (
-            selectedSlotInfo &&
-            currentDate >= selectedSlotInfo.start &&
-            currentDate < selectedSlotInfo.end
+            selectedSlot &&
+            date >= selectedSlot.start &&
+            date < selectedSlot.end
           ) {
             return {
               style: {
@@ -234,6 +201,7 @@ const CalendarView: React.FC<CalendarProps> = (props) => {
           }
           return {
             style: {
+              backgroundColor: "white",
               border: "none",
             },
           };
@@ -251,28 +219,17 @@ const CalendarView: React.FC<CalendarProps> = (props) => {
         <DialogContent
           className={cn(
             "sm:max-w-[425px]",
-            theme === "dark"
-              ? "dark:bg-slate-800 dark:border-slate-700"
-              : "bg-white",
+            "dark:bg-slate-800 dark:border-slate-700",
           )}
         >
           <DialogHeader>
-            <DialogTitle
-              className={cn(
-                theme === "dark" ? "text-slate-200" : "text-gray-900",
-              )}
-            >
-              Create New Task on Calendar
+            <DialogTitle className="dark:text-slate-200">
+              Create New Task
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="space-y-4">
             <div className="space-y-2">
-              <Label
-                htmlFor="title"
-                className={cn(
-                  theme === "dark" ? "text-slate-200" : "text-gray-700",
-                )}
-              >
+              <Label htmlFor="title" className="dark:text-slate-200">
                 Task Title
               </Label>
               <Input
@@ -280,47 +237,27 @@ const CalendarView: React.FC<CalendarProps> = (props) => {
                 value={newTaskTitle}
                 onChange={(e) => setNewTaskTitle(e.target.value)}
                 placeholder="Enter task title"
-                className={cn(
-                  theme === "dark"
-                    ? "dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200 placeholder:text-slate-400"
-                    : "bg-white border-gray-300 text-gray-900 placeholder:text-gray-400",
-                )}
+                className="dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200"
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
-                    handleCreateTaskFromSlot();
+                    handleCreateTask();
                   }
                 }}
               />
             </div>
-            <DialogFooter
-              className={cn(
-                theme === "dark" ? "border-slate-700" : "border-gray-200",
-                "pt-4",
-              )}
-            >
+            <DialogFooter>
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => {
-                  setIsDialogOpen(false);
-                  setSelectedSlotInfo(null);
-                }}
-                className={cn(
-                  theme === "dark"
-                    ? "dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
-                    : "border-gray-300 text-gray-700 hover:bg-gray-50",
-                )}
+                onClick={() => setIsDialogOpen(false)}
+                className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
               >
                 Cancel
               </Button>
               <Button
-                onClick={handleCreateTaskFromSlot}
+                onClick={handleCreateTask}
                 disabled={!newTaskTitle.trim()}
-                className={cn(
-                  theme === "dark"
-                    ? "dark:bg-purple-600 dark:text-white dark:hover:bg-purple-700"
-                    : "bg-purple-600 text-white hover:bg-purple-700",
-                )}
+                className="dark:bg-purple-600 dark:text-white dark:hover:bg-purple-700"
               >
                 Create Task
               </Button>

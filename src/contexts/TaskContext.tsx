@@ -98,7 +98,6 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({ children }) => {
     slot?: { start: Date; end: Date },
   ): Promise<Task | undefined> => {
     try {
-      setIsLoading(true);
       const user = await getAuthenticatedUser();
       if (!user) throw new Error("User not authenticated");
 
@@ -199,7 +198,6 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({ children }) => {
     updates: Partial<Task>,
   ): Promise<Task | undefined> => {
     try {
-      setIsLoading(true);
       const taskToUpdate = tasks.find((t) => t.id === taskId);
       if (!taskToUpdate) throw new Error("Task not found for update");
 
@@ -248,7 +246,6 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({ children }) => {
 
   const deleteTask = async (taskId: string): Promise<void> => {
     try {
-      setIsLoading(true);
       const { error: deleteError } = await supabase
         .from("tasks")
         .delete()
