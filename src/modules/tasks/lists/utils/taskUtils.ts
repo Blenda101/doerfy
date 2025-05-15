@@ -30,7 +30,7 @@ export async function createNewTask(
       priority: "medium",
       energy: "medium",
       location: null,
-      story: null,
+      // story: null,
       labels: [],
       show_in_time_box: true,
       show_in_list: true,
