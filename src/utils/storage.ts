@@ -50,7 +50,6 @@ export async function saveTasks(tasks: Task[]): Promise<void> {
       priority: task.priority,
       energy: task.energy,
       location: task.location,
-      story: task.story,
       labels: task.labels,
       icon: task.icon,
       show_in_time_box: task.showInTimeBox ?? true,
@@ -66,10 +65,10 @@ export async function saveTasks(tasks: Task[]): Promise<void> {
       duration_hours: task.schedule?.durationHours || 0,
       lead_days: task.schedule?.leadDays || 0,
       lead_hours: task.schedule?.leadHours || 0,
-      schedule_date: task.schedule?.date?.toISOString()! || "",
-      schedule_time: task.schedule?.time! || "",
+      schedule_date: task.schedule?.date || null,
+      schedule_time: task.schedule?.time! || null,
       recurring: task.schedule?.recurring?.type || null,
-      story_id: task.story,
+      story_id: task.storyId || null,
     }));
 
     const { error } = await supabase.from("tasks").upsert(tasksToUpsert, {
