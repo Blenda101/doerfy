@@ -25,7 +25,6 @@ import {
   EndsType,
   RecurringPattern,
   TaskSchedule,
-  WeekDays,
 } from "../types/task";
 import { cn } from "../lib/utils";
 import { WEEK_DAYS } from "../data/week";

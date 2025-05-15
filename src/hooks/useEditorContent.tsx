@@ -1,4 +1,4 @@
-import { generateHTML, mergeAttributes } from "@tiptap/react";
+import { generateHTML } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import TaskList from "@tiptap/extension-task-list";

@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from "react";
 import {
   Tabs,
-  TabsList,
-  TabsTrigger,
   TabsContent,
 } from "../../components/ui/tabs";
 import { Sidebar } from "../../components/Sidebar";
@@ -13,23 +11,20 @@ import { PropertySheet } from "../../components/PropertySheet";
 import { PtbTimeBox } from "../PtbTimeBox/PtbTimeBox";
 import { TaskList } from "../TaskList/TaskList";
 import CalendarView from "../../modules/tasks/calendar";
-import { AddListDialog } from "../../components/AddListDialog";
 import {
   Theme,
   getInitialTheme,
   setTheme as setThemeUtil,
 } from "../../utils/theme";
-import { useFilterStore } from "../../store/filterStore";
 import { supabase } from "../../utils/supabaseClient";
 import { cn } from "../../lib/utils";
 import { Filter, ListIcon, CalendarIcon } from "lucide-react";
 import { toast } from "react-hot-toast";
-import { Task, TaskFromSupabase, TaskSchedule } from "../../types/task";
+import { Task, TaskFromSupabase } from "../../types/task";
 import ToggleButton from "../../components/ui/toggle";
 import { useLists } from "../../hooks/useLists";
 import useStories from "../../hooks/useStories";
 import { mapTaskFromSupabase, mapTaskToSupabase } from "../../utils/taskMapper";
-import { getTask } from "../../utils/task";
 
 const STORAGE_KEYS = {
   ACTIVE_TAB: "activeTaskTab",

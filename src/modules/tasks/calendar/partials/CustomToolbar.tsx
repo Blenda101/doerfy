@@ -1,5 +1,5 @@
 import React from "react";
-import { Views, View } from "react-big-calendar";
+import { Views } from "react-big-calendar";
 import { Button } from "../../../../components/ui/button";
 import { cn } from "../../../../lib/utils";
 import { ToolbarProps } from "../types";

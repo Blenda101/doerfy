@@ -1,4 +1,4 @@
-import { Task, TaskFromSupabase } from "../../../../types/task";
+import { Task } from "../../../../types/task";
 import { supabase } from "../../../../utils/supabaseClient";
 import { getAuthenticatedUser } from "../../../../utils/auth";
 import { mapTaskFromSupabase } from "../../../../utils/taskMapper";

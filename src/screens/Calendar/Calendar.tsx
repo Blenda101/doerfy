@@ -4,7 +4,6 @@ import {
   dateFnsLocalizer,
   Views,
   View,
-  Event,
   CalendarProps as BigCalendarProps,
 } from "react-big-calendar";
 import { format, parse, startOfWeek, getDay } from "date-fns";
@@ -18,8 +17,6 @@ import { cn } from "../../lib/utils";
 import { Theme } from "../../utils/theme";
 import { Plus } from "lucide-react";
 import { createNewTask } from "../../modules/tasks/lists/utils/taskUtils";
-import { List } from "../../hooks/useLists";
-import { Story } from "../../types/story";
 
 interface CalendarProps {
   theme?: Theme;

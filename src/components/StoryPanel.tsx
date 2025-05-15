@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
@@ -7,22 +7,11 @@ import { Story, StoryType } from "../types/story";
 import { cn } from "../lib/utils";
 import { Theme } from "../utils/theme";
 import {
-  X,
-  ChevronDown,
   Calendar,
-  BookOpen,
-  Target,
-  ClipboardList,
-  Folder,
-  CheckSquare,
   InfoIcon,
 } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "./ui/dropdown-menu";
+
+
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { Editor } from "./forms/Editor";

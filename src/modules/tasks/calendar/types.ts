@@ -1,9 +1,8 @@
 import {
   View,
-  Event as BigCalendarEvent,
   CalendarProps as BigCalendarProps,
 } from "react-big-calendar";
-import { Task, TaskSchedule, TaskSchema } from "../../../types/task";
+import { Task, TaskSchema } from "../../../types/task";
 import { Theme } from "../../../utils/theme";
 
 // Props for the main Calendar component

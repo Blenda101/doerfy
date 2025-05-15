@@ -2,7 +2,6 @@ import React from "react";
 import { TaskItem } from "../../components/TaskItem";
 import { ListHeader } from "../../components/ListHeader";
 import { InlineTaskEditor } from "../../components/InlineTaskEditor";
-import { cn } from "../../lib/utils";
 import { Theme } from "../../utils/theme";
 import { useTasks } from "../../hooks/useTasks";
 import { List } from "../../hooks/useLists";

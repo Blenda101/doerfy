@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { format } from "date-fns";
-import { AlarmClock, CalendarIcon, Clock, RepeatIcon } from "lucide-react";
+import { CalendarIcon, RepeatIcon } from "lucide-react";
 import { Button } from "./ui/button";
 import { TaskScheduler } from "./TaskScheduler";
 import { cn } from "../lib/utils";
