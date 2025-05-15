@@ -7,7 +7,13 @@ import { StoryPanel } from "../../components/StoryPanel";
 import { WriteStoriesPanel } from "../../components/WriteStoriesPanel";
 import StoriesFlow from "../../components/StoriesFlow";
 import { Theme, getInitialTheme } from "../../utils/theme";
-import { Story, StoryWithRelations } from "../../types/story";
+import {
+  mapStoryToSupabase,
+  Story,
+  StoryFromSupabase,
+  StoryWithRelations,
+  mapStoryFromSupabase,
+} from "../../types/story";
 import { supabase } from "../../utils/supabaseClient";
 import { cn } from "../../lib/utils";
 import { BookOpen, List, Share2 } from "lucide-react";
@@ -59,8 +65,8 @@ export const Stories: React.FC = () => {
 
         // Load parent stories for filtered stories
         let parentIds = stories
-          .filter((s) => s.parent_id)
-          .map((s) => s.parent_id);
+          .filter((s) => s.parent_id && s.parent_id !== null)
+          .map((s) => s.parent_id!);
 
         const { data: parents } = await supabase
           .from("stories")
@@ -77,15 +83,21 @@ export const Stories: React.FC = () => {
 
         // Create a map of parent IDs to child counts
         const childCountMap = (childCounts || []).reduce((acc, curr) => {
-          acc[curr.parent_id] = (acc[curr.parent_id] || 0) + 1;
+          acc[curr.parent_id!] = (acc[curr.parent_id!] || 0) + 1;
           return acc;
         }, {} as Record<string, number>);
 
-        const storiesWithRelations = stories.map((story) => ({
-          ...story,
-          parent: parents?.find((p) => p.id === story.parent_id),
-          childCount: childCountMap[story.id] || 0,
-        }));
+        const storiesWithRelations: StoryWithRelations[] = stories.map(
+          (story) => {
+            const parentData =
+              parents?.find((p) => p.id === story.parent_id) || null;
+            return {
+              ...mapStoryFromSupabase(story),
+              parent: parentData ? mapStoryFromSupabase(parentData) : null,
+              childCount: childCountMap[story.id] || 0,
+            };
+          },
+        );
 
         setStories(storiesWithRelations);
       } catch (error) {
@@ -98,25 +110,11 @@ export const Stories: React.FC = () => {
   }, [filterParent]);
 
   const handleStoryUpdate = async (updatedStory: Story) => {
+    const storyToUpdate = mapStoryToSupabase(updatedStory);
     try {
       const { error } = await supabase
         .from("stories")
-        .update({
-          title: updatedStory.title,
-          description: updatedStory.description,
-          type: updatedStory.type,
-          parent_id: updatedStory.parentId,
-          vision: updatedStory.vision,
-          mission: updatedStory.mission,
-          goals: updatedStory.goals,
-          what_done_looks_like: updatedStory.whatDoneLooksLike,
-          due_date: updatedStory.dueDate,
-          effort_estimate: updatedStory.effortEstimate,
-          status: updatedStory.status,
-          labels: updatedStory.labels,
-          assignee: updatedStory.assignee,
-          updated_at: new Date().toISOString(),
-        })
+        .update(storyToUpdate)
         .eq("id", updatedStory.id);
 
       if (error) throw error;
@@ -157,16 +155,18 @@ export const Stories: React.FC = () => {
 
   const handleStoryDuplicate = async (story: StoryWithRelations) => {
     try {
-      const newStory = {
+      const newStory: Story = {
         ...story,
         id: `${story.type.toUpperCase()}-${Math.floor(Math.random() * 10000)}`,
         title: `${story.title} (Copy)`,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        createdBy: user.id,
       };
 
-      const { error } = await supabase.from("stories").insert(newStory);
-
+      const { error } = await supabase
+        .from("stories")
+        .insert(mapStoryToSupabase(newStory));
       if (error) throw error;
 
       setStories([...stories, { ...newStory, childCount: 0 }]);
@@ -339,14 +339,6 @@ export const Stories: React.FC = () => {
                 onClose={() => setSelectedStory(null)}
                 onUpdate={handleStoryUpdate}
                 theme={theme}
-                availableParents={stories.filter(
-                  (s) =>
-                    s.id !== selectedStory.id &&
-                    ((selectedStory.type === "mega_do" && s.type === "theme") ||
-                      (selectedStory.type === "project" &&
-                        s.type === "mega_do") ||
-                      (selectedStory.type === "todo" && s.type === "project")),
-                )}
               />
             </div>
           )}

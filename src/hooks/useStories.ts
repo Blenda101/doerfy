@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { Story, StoryType } from "../types/story";
+import { mapStoryFromSupabase, Story, StoryType } from "../types/story";
 import { supabase } from "../utils/supabaseClient";
 
 const useStories = (storyType: StoryType | null) => {
@@ -17,7 +17,7 @@ const useStories = (storyType: StoryType | null) => {
 
         if (error) throw error;
 
-        setStories(stories);
+        setStories(stories.map(mapStoryFromSupabase));
       } catch (error) {
         console.error("Error loading stories:", error);
         toast.error("Failed to load stories");
