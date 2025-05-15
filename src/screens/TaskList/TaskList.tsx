@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { TaskItem } from "../../components/TaskItem";
 import { ListHeader } from "../../components/ListHeader";
 import { InlineTaskEditor } from "../../components/InlineTaskEditor";
@@ -7,6 +7,8 @@ import { useTasks } from "../../hooks/useTasks";
 import { List } from "../../hooks/useLists";
 import { AddListDialog } from "../../components/AddListDialog";
 import { Task } from "../../types/task";
+import { supabase } from "../../utils/supabaseClient";
+import { toast } from "react-hot-toast";
 
 interface TaskListProps {
   theme?: Theme;
@@ -25,6 +27,7 @@ export const TaskList: React.FC<TaskListProps> = ({
   setLists,
   onTaskSelect,
 }) => {
+  const [editingList, setEditingList] = useState<List | null>(null);
   const {
     isLoading,
     error,
@@ -43,6 +46,55 @@ export const TaskList: React.FC<TaskListProps> = ({
     handleTaskTitleUpdate,
     handleDeleteTask,
   } = useTasks({ lists });
+
+  const openAddListDialog = () => {
+    setEditingList(null);
+    setIsAddListOpen(true);
+  };
+
+  const openEditListDialog = (list: List) => {
+    setEditingList(list);
+    setIsAddListOpen(true);
+  };
+
+  const handleDeleteList = async (listId: string) => {
+    if (
+      !window.confirm(
+        "Are you sure you want to delete this list and all its tasks?",
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const { error: tasksError } = await supabase
+        .from("tasks")
+        .delete()
+        .eq("list_id", listId);
+
+      if (tasksError) {
+        throw tasksError;
+      }
+
+      const { error: listError } = await supabase
+        .from("lists")
+        .delete()
+        .eq("id", listId);
+
+      if (listError) {
+        throw listError;
+      }
+
+      setLists(lists.filter((list) => list.id !== listId));
+      if (activeList === listId) {
+        setActiveList(null);
+      }
+      toast.success("List deleted successfully");
+    } catch (error) {
+      console.error("Error deleting list:", error);
+      toast.error("Failed to delete list. Check console for details.");
+    }
+  };
 
   if (isLoading) {
     return (
@@ -82,8 +134,8 @@ export const TaskList: React.FC<TaskListProps> = ({
                       setNewTaskList(list.id);
                       setNewTaskTitle("");
                     }}
-                    onEditList={() => console.log("Edit list clicked")}
-                    onDeleteList={() => console.log("Delete list clicked")}
+                    onEditList={() => openEditListDialog(list)}
+                    onDeleteList={() => handleDeleteList(list.id)}
                   />
 
                   <div className="space-y-2">
@@ -137,10 +189,23 @@ export const TaskList: React.FC<TaskListProps> = ({
 
       <AddListDialog
         isOpen={isAddListOpen}
-        onClose={() => setIsAddListOpen(false)}
-        onSave={(list) => {
+        onClose={() => {
           setIsAddListOpen(false);
-          setLists([list, ...lists]);
+          setEditingList(null);
+        }}
+        listToEdit={editingList}
+        onSave={(savedList) => {
+          if (editingList) {
+            setLists(
+              lists.map((list) =>
+                list.id === savedList.id ? savedList : list,
+              ),
+            );
+          } else {
+            setLists([savedList, ...lists]);
+          }
+          setIsAddListOpen(false);
+          setEditingList(null);
         }}
       />
     </div>

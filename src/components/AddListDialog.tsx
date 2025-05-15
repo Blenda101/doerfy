@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -19,21 +19,45 @@ import { List } from "../hooks/useLists";
 interface AddListDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (config: List) => void;
+  onSave: (list: List) => void;
+  listToEdit?: List | null;
 }
 
 export const AddListDialog: React.FC<AddListDialogProps> = ({
   isOpen,
   onClose,
   onSave,
+  listToEdit,
 }) => {
   const [config, setConfig] = useState<List>({
-    id: crypto.randomUUID(),
-    name: "",
-    description: "",
-    icon: "list",
-    color: "gray",
+    id: listToEdit?.id || crypto.randomUUID(),
+    name: listToEdit?.name || "",
+    description: listToEdit?.description || "",
+    icon: listToEdit?.icon || "list",
+    color: listToEdit?.color || "gray",
   });
+
+  const isEditMode = !!listToEdit;
+
+  useEffect(() => {
+    if (isEditMode && listToEdit) {
+      setConfig({
+        id: listToEdit.id,
+        name: listToEdit.name || "",
+        description: listToEdit.description || "",
+        icon: listToEdit.icon || "list",
+        color: listToEdit.color || "gray",
+      });
+    } else {
+      setConfig({
+        id: crypto.randomUUID(),
+        name: "",
+        description: "",
+        icon: "list",
+        color: "gray",
+      });
+    }
+  }, [isOpen, listToEdit, isEditMode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,37 +71,69 @@ export const AddListDialog: React.FC<AddListDialogProps> = ({
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) {
-        toast.error("You must be logged in to create a list");
+        toast.error("You must be logged in to perform this action");
         return;
       }
 
-      const { data, error } = await supabase
-        .from("lists")
-        .insert({
-          name: config.name.trim(),
-          description: config.description.trim(),
-          icon: config.icon,
-          color: config.color,
-          owner_id: user.id,
-        })
-        .select()
-        .single();
+      let savedData: List | null = null;
+      let errorOccurred = null;
 
-      if (error) {
-        if (error.code === "23505") {
+      if (isEditMode) {
+        const { data, error } = await supabase
+          .from("lists")
+          .update({
+            name: config.name.trim(),
+            description: config.description?.trim() || null,
+            icon: config.icon,
+            color: config.color,
+          })
+          .eq("id", config.id)
+          .select()
+          .single();
+        savedData = data;
+        errorOccurred = error;
+      } else {
+        const { data, error } = await supabase
+          .from("lists")
+          .insert({
+            name: config.name.trim(),
+            description: config.description?.trim() || null,
+            icon: config.icon,
+            color: config.color,
+            owner_id: user.id,
+            id: config.id, // Use the generated id for new lists
+          })
+          .select()
+          .single();
+        savedData = data;
+        errorOccurred = error;
+      }
+
+      if (errorOccurred) {
+        if (errorOccurred.code === "23505") {
           toast.error("A list with this name already exists");
         } else {
-          throw error;
+          throw errorOccurred;
         }
         return;
       }
 
-      onSave(data);
-      onClose();
-      toast.success("List created successfully");
+      if (savedData) {
+        onSave(savedData);
+        onClose();
+        toast.success(
+          `List ${isEditMode ? "updated" : "created"} successfully`,
+        );
+      } else {
+        // This case should ideally not happen if there's no error
+        toast.error(`Failed to ${isEditMode ? "update" : "create"} list`);
+      }
     } catch (error) {
-      console.error("Error creating list:", error);
-      toast.error("Failed to create list");
+      console.error(
+        `Error ${isEditMode ? "updating" : "creating"} list:`,
+        error,
+      );
+      toast.error(`Failed to ${isEditMode ? "update" : "create"} list`);
     }
   };
 
@@ -92,7 +148,7 @@ export const AddListDialog: React.FC<AddListDialogProps> = ({
         <DialogHeader className="flex flex-row items-center gap-2">
           <ListIcon className="w-5 h-5 text-[#5036b0] dark:text-[#8B5CF6]" />
           <DialogTitle className="text-xl font-light dark:text-slate-200">
-            Add List
+            {isEditMode ? "Edit List" : "Add List"}
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -115,7 +171,7 @@ export const AddListDialog: React.FC<AddListDialogProps> = ({
             </Label>
             <Textarea
               id="description"
-              value={config.description}
+              value={config.description || ""}
               onChange={(e) =>
                 setConfig({ ...config, description: e.target.value })
               }
@@ -137,7 +193,7 @@ export const AddListDialog: React.FC<AddListDialogProps> = ({
               disabled={!config.name.trim()}
               className="dark:bg-purple-600 dark:text-white dark:hover:bg-purple-700"
             >
-              Save
+              {isEditMode ? "Save Changes" : "Save"}
             </Button>
           </DialogFooter>
         </form>

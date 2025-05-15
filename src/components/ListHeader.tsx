@@ -19,7 +19,7 @@ interface ListHeaderProps {
   isActive: boolean;
   onListClick: (listId: string) => void;
   onAddTask: () => void;
-  onEditList: (listId: string) => void;
+  onEditList: () => void;
   onDeleteList: (listId: string) => void;
 }
 
@@ -88,7 +88,7 @@ export const ListHeader: React.FC<ListHeaderProps> = ({
           <DropdownMenuItem
             onClick={(e) => {
               e.stopPropagation();
-              onEditList(listId);
+              onEditList();
             }}
           >
             <Edit className="w-4 h-4 mr-2" />

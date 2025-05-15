@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../utils/supabaseClient";
-import { Task } from "../types/task";
+import { Task, TaskFromSupabase } from "../types/task";
 import { toast } from "react-hot-toast";
 import { createNewTask } from "../modules/tasks/lists/utils/taskUtils";
 import { List } from "./useLists";
+import { mapTaskFromSupabase } from "../utils/taskMapper";
 
 interface UseTasksProps {
   lists: List[];
@@ -69,25 +70,29 @@ export const useTasks = ({ lists }: UseTasksProps): UseTasksReturn => {
 
         if (tasksError) throw tasksError;
 
-        const transformedTasks =
-          tasksData?.map((task) => ({
-            ...task,
-            showInTimeBox: task.show_in_time_box,
-            showInList: task.show_in_list,
-            showInCalendar: task.show_in_calendar,
-            timeStage: task.timestage,
-            agingStatus: task.aging_status,
-            stageEntryDate: task.stage_entry_date,
-            createdAt: task.created_at,
-            updatedAt: task.updated_at,
-            createdBy: task.created_by,
-            listId: task.list_id,
-            checklistItems: [],
-            comments: [],
-            attachments: [],
-            history: [],
-          })) || [];
+        // const transformedTasks: Task[] =
+        //   tasksData?.map((task) => ({
+        //     ...task,
+        //     showInTimeBox: task.show_in_time_box,
+        //     showInList: task.show_in_list,
+        //     showInCalendar: task.show_in_calendar,
+        //     timeStage: task.timestage,
+        //     agingStatus: task.aging_status,
+        //     stageEntryDate: task.stage_entry_date,
+        //     createdAt: task.created_at,
+        //     updatedAt: task.updated_at,
+        //     createdBy: task.created_by,
+        //     listId: task.list_id,
+        //     checklistItems: [],
+        //     comments: [],
+        //     attachments: [],
+        //     history: [],
+        //     story: task.story_id,
+        //     schedule: task.schedule_date,
+        //   })) || [];
 
+        const transformedTasks =
+          tasksData?.map((task) => mapTaskFromSupabase(task, user.id)) || [];
         setTasks(transformedTasks);
       } catch (error) {
         console.error("Error loading tasks:", error);
@@ -220,6 +225,7 @@ export const useTasks = ({ lists }: UseTasksProps): UseTasksReturn => {
   };
 
   const handleTaskTitleUpdate = async (taskId: string, title: string) => {
+    console.log({ taskId, title });
     try {
       const { error } = await supabase
         .from("tasks")
