@@ -25,7 +25,7 @@ import { Input } from "../../../components/ui/input";
 import { Label } from "../../../components/ui/label";
 import { getDateInterval, getSlotInterval } from "./utils/getDateInterval";
 import { Task } from "../../../types/task";
-import { useTaskContext } from "../../../hooks/useTaskContext";
+import { useTasks } from "../../../contexts/TaskContext";
 
 const locales = {
   "en-US": enUS,
@@ -41,7 +41,13 @@ const Calendar = withDragAndDrop<CalendarEvent>(BigCalendar);
 
 const CalendarView: React.FC<CalendarProps> = (props) => {
   const { theme = "light", onTaskSelect } = props;
-  const { tasks, isLoading, error, createTask, updateTask } = useTaskContext();
+  const {
+    tasks,
+    isLoadingTasks,
+    tasksError,
+    createTaskMutation,
+    updateTaskMutation,
+  } = useTasks();
   const [view, setView] = useState<View>(Views.DAY);
   const [date, setDate] = useState(new Date());
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -79,7 +85,10 @@ const CalendarView: React.FC<CalendarProps> = (props) => {
         updatedAt: new Date().toISOString(),
       };
 
-      await updateTask(updatedTask.id, updatedTask);
+      updateTaskMutation.mutate({
+        taskId: updatedTask.id,
+        updates: updatedTask,
+      });
     } catch (error) {
       console.error("Error moving task:", error);
     }
@@ -110,8 +119,10 @@ const CalendarView: React.FC<CalendarProps> = (props) => {
         },
         updatedAt: new Date().toISOString(),
       };
-      console.log({ updatedTask });
-      await updateTask(updatedTask.id, updatedTask);
+      updateTaskMutation.mutate({
+        taskId: updatedTask.id,
+        updates: updatedTask,
+      });
     } catch (error) {
       console.error("Error resizing task:", error);
     }
@@ -141,12 +152,12 @@ const CalendarView: React.FC<CalendarProps> = (props) => {
     if (!selectedSlot || !newTaskTitle.trim()) return;
 
     try {
-      await createTask(
-        {
+      createTaskMutation.mutate({
+        taskData: {
           title: newTaskTitle.trim(),
         },
-        selectedSlot,
-      );
+        slot: selectedSlot,
+      });
       setNewTaskTitle("");
       setIsDialogOpen(false);
     } catch (error) {
@@ -154,12 +165,12 @@ const CalendarView: React.FC<CalendarProps> = (props) => {
     }
   };
 
-  if (isLoading) {
+  if (isLoadingTasks) {
     return <div>Loading...</div>;
   }
 
-  if (error) {
-    return <div>Error: {error}</div>;
+  if (tasksError) {
+    return <div>Error: {tasksError.message}</div>;
   }
 
   return (

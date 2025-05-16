@@ -8,7 +8,7 @@ import { AddListDialog } from "../../components/AddListDialog";
 import { Task } from "../../types/task";
 import { supabase } from "../../utils/supabaseClient";
 import { toast } from "react-hot-toast";
-import { useTaskContext } from "../../hooks/useTaskContext";
+import { useTasks } from "../../contexts/TaskContext";
 
 interface TaskListProps {
   theme?: Theme;
@@ -29,12 +29,12 @@ export const TaskList: React.FC<TaskListProps> = ({
 }) => {
   const {
     tasks,
-    createTask,
-    updateTask,
-    deleteTask,
-    isLoading: tasksLoadingGlobal,
-    error: tasksErrorGlobal,
-  } = useTaskContext();
+    createTaskMutation,
+    updateTaskMutation,
+    deleteTaskMutation,
+    isLoadingTasks: tasksLoadingGlobal,
+    tasksError: tasksErrorGlobal,
+  } = useTasks();
 
   const [editingList, setEditingList] = useState<List | null>(null);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
@@ -55,7 +55,7 @@ export const TaskList: React.FC<TaskListProps> = ({
   }, [lists, tasks]);
 
   const handleTaskComplete = async (taskId: string) => {
-    await updateTask(taskId, { timeStage: "done" });
+    updateTaskMutation.mutate({ taskId, updates: { timeStage: "done" } });
   };
 
   const handleLocalNewTask = async (listId: string, title: string) => {
@@ -63,22 +63,30 @@ export const TaskList: React.FC<TaskListProps> = ({
       toast.error("Task title cannot be empty.");
       return;
     }
-    const newTaskData: Partial<Task> = {
+    const newTaskData: Partial<
+      Omit<Task, "id" | "createdAt" | "updatedAt" | "createdBy" | "assignee">
+    > = {
       title: title.trim(),
       listId,
       showInList: true,
       timeStage: "queue",
     };
-    const created = await createTask(newTaskData);
-    if (created) {
-      setNewTaskTitle("");
-      setEditingTaskId(null);
-      setNewTaskListId(null);
-    }
+    createTaskMutation.mutate(
+      { taskData: newTaskData },
+      {
+        onSuccess: (created) => {
+          if (created) {
+            setNewTaskTitle("");
+            setEditingTaskId(null);
+            setNewTaskListId(null);
+          }
+        },
+      },
+    );
   };
 
   const handleLocalTaskTitleUpdate = async (taskId: string, title: string) => {
-    await updateTask(taskId, { title: title.trim() });
+    updateTaskMutation.mutate({ taskId, updates: { title: title.trim() } });
     setEditingTaskId(null);
   };
 
@@ -103,7 +111,7 @@ export const TaskList: React.FC<TaskListProps> = ({
     try {
       const tasksInList = tasks.filter((task) => task.listId === listId);
       for (const task of tasksInList) {
-        await deleteTask(task.id);
+        deleteTaskMutation.mutate(task.id);
       }
 
       const { error: listDeletionError } = await supabase
@@ -138,7 +146,7 @@ export const TaskList: React.FC<TaskListProps> = ({
     return (
       <div className="flex items-center justify-center min-h-[200px]">
         <div className="text-red-500 p-3 bg-red-50 border border-red-300 rounded">
-          Error: {tasksErrorGlobal}
+          Error: {tasksErrorGlobal.message}
         </div>
       </div>
     );
@@ -211,7 +219,7 @@ export const TaskList: React.FC<TaskListProps> = ({
                           setEditingTaskId(null);
                           setNewTaskTitle("");
                         }}
-                        onDeleteTask={() => deleteTask(task.id)}
+                        onDeleteTask={() => deleteTaskMutation.mutate(task.id)}
                       />
                     ))}
                   </div>

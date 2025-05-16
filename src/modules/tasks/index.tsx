@@ -23,7 +23,7 @@ import { useLists } from "../../hooks/useLists";
 import useStories from "../../hooks/useStories";
 import { mapTaskFromSupabase, mapTaskToSupabase } from "../../utils/taskMapper";
 import { TaskProvider } from "../../contexts/TaskContext";
-import { useTaskContext } from "../../hooks/useTaskContext";
+import { useTasks } from "../../contexts/TaskContext";
 
 const STORAGE_KEYS = {
   ACTIVE_TAB: "activeTaskTab",
@@ -55,11 +55,11 @@ const TasksComponent: React.FC = () => {
 
   const {
     tasks,
-    isLoading: tasksLoading,
-    error: tasksError,
+    isLoadingTasks: tasksLoading,
+    tasksError: tasksErrorContext,
     getTaskById,
-    updateTask: updateTaskContext,
-  } = useTaskContext();
+    updateTaskMutation,
+  } = useTasks();
 
   const { lists, setLists } = useLists();
   const { stories } = useStories("todo");
@@ -106,15 +106,24 @@ const TasksComponent: React.FC = () => {
   };
 
   const handleTaskUpdate = async (updatedTask: Task) => {
-    const result = await updateTaskContext(updatedTask.id, updatedTask);
-    if (result) {
-      if (selectedTaskForSheet && selectedTaskForSheet.id === result.id) {
-        setSelectedTaskForSheet(result);
-      }
-      toast.success("Task updated successfully via context");
-    } else {
-      toast.error("Failed to update task via context");
-    }
+    updateTaskMutation.mutate(
+      { taskId: updatedTask.id, updates: updatedTask },
+      {
+        onSuccess: (result) => {
+          if (result) {
+            if (selectedTaskForSheet && selectedTaskForSheet.id === result.id) {
+              setSelectedTaskForSheet(result);
+            }
+            toast.success("Task updated successfully via context");
+          } else {
+            toast.error("Failed to update task: No result from mutation");
+          }
+        },
+        onError: (error) => {
+          toast.error(`Failed to update task: ${error.message}`);
+        },
+      },
+    );
   };
 
   const getHeaderProps = (): HeaderProps => {
@@ -152,11 +161,11 @@ const TasksComponent: React.FC = () => {
     );
   }
 
-  if (tasksError) {
+  if (tasksErrorContext) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-red-500 p-4 bg-red-100 border border-red-400 rounded">
-          Error loading tasks: {tasksError}
+          Error loading tasks: {tasksErrorContext.message}
         </div>
       </div>
     );
