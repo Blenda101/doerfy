@@ -155,7 +155,12 @@ export const useCreateTaskMutation = () => {
 // Custom hook for updating a task
 export const useUpdateTaskMutation = () => {
   const queryClient = useQueryClient();
-  return useMutation<Task, Error, UpdateTaskVariables>({
+  return useMutation<
+    Task,
+    Error,
+    UpdateTaskVariables,
+    { previousTasks: Task[] | undefined }
+  >({
     mutationFn: async ({ taskId, updates }) => {
       const user = await getAuthenticatedUser();
       if (!user) throw new Error("User not authenticated for update");
@@ -183,12 +188,40 @@ export const useUpdateTaskMutation = () => {
       if (updateError) throw updateError;
       return mapTaskFromSupabase(data as TaskFromSupabase, user.id);
     },
-    onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: taskKeys.all });
-      toast.success("Task updated successfully");
+    onMutate: async ({ taskId, updates }) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: taskKeys.all });
+
+      // Snapshot the previous value
+      const previousTasks = queryClient.getQueryData<Task[]>(taskKeys.all);
+
+      // Optimistically update to the new value
+      if (previousTasks) {
+        queryClient.setQueryData<Task[]>(taskKeys.all, (old) =>
+          old?.map((task) =>
+            task.id === taskId
+              ? { ...task, ...updates, updatedAt: new Date().toISOString() }
+              : task,
+          ),
+        );
+      }
+
+      // Return a context object with the snapshotted value
+      return { previousTasks };
     },
-    onError: (error) => {
-      toast.error(error.message || "Failed to update task");
+    onError: (err, newTask, context) => {
+      // If the mutation fails, use the context returned from onMutate to roll back
+      if (context?.previousTasks) {
+        queryClient.setQueryData(taskKeys.all, context.previousTasks);
+      }
+      toast.error(err.message || "Failed to update task");
+    },
+    onSettled: () => {
+      // Always refetch after error or success to ensure cache is in sync
+      queryClient.invalidateQueries({ queryKey: taskKeys.all });
+    },
+    onSuccess: (data) => {
+      toast.success("Task updated successfully");
     },
   });
 };
