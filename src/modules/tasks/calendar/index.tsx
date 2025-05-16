@@ -225,72 +225,77 @@ const CalendarView: React.FC<CalendarProps> = (props) => {
 
   return (
     <div className="relative flex-1 p-6 overflow-auto" ref={calendarRef}>
-      <Calendar
-        selectable
-        resizable
-        localizer={localizer}
-        events={events}
-        startAccessor="start"
-        endAccessor="end"
-        views={[Views.MONTH, Views.WEEK, Views.DAY]}
-        view={view}
-        onView={setView}
-        date={date}
-        onNavigate={setDate}
-        components={{
-          event: CustomEvent,
-          toolbar: (props) => (
-            <CustomToolbar
-              toolbar={props}
-              view={view}
-              onViewChange={setView}
-              theme={theme}
-            />
-          ),
-          dateCellWrapper: CustomDateCellWrapper,
-          timeSlotWrapper: CustomTimeSlotWrapper,
-        }}
-        onSelectEvent={(event: CalendarEvent) => onTaskSelect(event.task)}
-        onSelectSlot={handleSelectSlot}
-        onEventDrop={moveEvent as any}
-        onEventResize={resizeEvent as any}
-        draggableAccessor={() => true}
-        slotPropGetter={(date) => {
-          if (
-            selectedSlot &&
-            date >= selectedSlot.start &&
-            date < selectedSlot.end
-          ) {
+      <div
+        className={cn(
+          "rounded-lg",
+          view === Views.MONTH &&
+            "border border-slate-200 dark:border-slate-700 shadow-sm",
+        )}
+      >
+        <Calendar
+          selectable
+          resizable
+          localizer={localizer}
+          events={events}
+          startAccessor="start"
+          endAccessor="end"
+          views={[Views.MONTH, Views.WEEK, Views.DAY]}
+          view={view}
+          onView={setView}
+          date={date}
+          onNavigate={setDate}
+          components={{
+            event: CustomEvent,
+            toolbar: (props) => (
+              <CustomToolbar
+                toolbar={props}
+                view={view}
+                onViewChange={setView}
+                theme={theme}
+              />
+            ),
+            dateCellWrapper: CustomDateCellWrapper,
+            timeSlotWrapper: CustomTimeSlotWrapper,
+          }}
+          onSelectEvent={(event: CalendarEvent) => onTaskSelect(event.task)}
+          onSelectSlot={handleSelectSlot}
+          onEventDrop={moveEvent as any}
+          onEventResize={resizeEvent as any}
+          draggableAccessor={() => true}
+          slotPropGetter={(date) => {
+            if (
+              selectedSlot &&
+              date >= selectedSlot.start &&
+              date < selectedSlot.end
+            ) {
+              return {
+                style: {
+                  backgroundColor: "rgba(80, 54, 176, 0.1)",
+                },
+              };
+            }
             return {
               style: {
-                backgroundColor: "rgba(80, 54, 176, 0.1)",
+                backgroundColor: "white",
+                border: "none",
               },
             };
-          }
-          return {
-            style: {
-              backgroundColor: "white",
-              border: "none",
-            },
-          };
-        }}
-        style={{ height: "calc(100vh - 160px)" }}
-        className={cn(
-          "rounded-lg border",
-          theme === "dark"
-            ? "border-slate-700 bg-slate-800 text-white"
-            : "border-gray-200",
-        )}
-      />
+          }}
+          style={{ height: "calc(100vh - 160px)" }}
+          className={cn(
+            "rounded-lg",
+            theme === "dark" ? "bg-slate-800 text-white" : "bg-white",
+          )}
+        />
+      </div>
       {isDialogOpen && coordinates && (
         <div
+          className="z-40 fixed"
           style={{
-            position: "fixed",
             top: coordinates.y,
             left: coordinates.x,
             width: coordinates.width,
             height: coordinates.height,
-            zIndex: 9999,
           }}
         >
           <textarea
@@ -304,6 +309,12 @@ const CalendarView: React.FC<CalendarProps> = (props) => {
                 handleCreateTask();
                 setIsDialogOpen(false);
               }
+            }}
+            onBlur={() => {
+              setIsDialogOpen(false);
+              setCoordinates(null);
+              setSelectedSlot(null);
+              setNewTaskTitle("");
             }}
             autoFocus
             className="w-full h-full resize-none rounded-md border border-slate-300 bg-white p-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200"
