@@ -213,7 +213,9 @@ const TasksComponent: React.FC = () => {
 
       <Tabs
         value={activeTab}
-        onValueChange={(value) => setActiveTab(value as ActiveTab)}
+        onValueChange={(value) => {
+          setActiveTab(value as ActiveTab);
+        }}
         className="flex-1 flex flex-col h-full"
       >
         <TasksHeader
@@ -240,7 +242,12 @@ const TasksComponent: React.FC = () => {
                 },
               ]}
               activeOption={activeTab}
-              onChange={setActiveTab as (value: string) => void}
+              onChange={(value) => {
+                setActiveTab(value as ActiveTab);
+                setSelectedLocalTaskId(null);
+                setSelectedTaskForSheet(null);
+                setActivePanel(null);
+              }}
             />
           }
           onFilterClick={handleFilterClick}

@@ -20,6 +20,7 @@ import { Editor } from "./forms/Editor";
 import { List } from "../hooks/useLists";
 import { Story } from "../types/story";
 import { Schedule } from "./Schedule";
+import TaskAge from "./TaskAge";
 
 interface PropertySheetProps {
   task: Task;
@@ -85,9 +86,11 @@ export const PropertySheet: React.FC<PropertySheetProps> = ({
       ...updates,
       updatedAt: new Date().toISOString(),
     };
-    onTaskUpdate(updatedTask);
-
-    // debouncedUpdate(updatedTask);
+    if (updates.labels) {
+      onTaskUpdate(updatedTask);
+    } else {
+      debouncedUpdate(updatedTask);
+    }
   };
 
   const handleTitleChange = (newTitle: string) => {
@@ -128,28 +131,13 @@ export const PropertySheet: React.FC<PropertySheetProps> = ({
       />
 
       <div className="flex justify-between items-center">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center flex-wrap gap-4">
           <Schedule
             schedule={task.schedule}
             onScheduleChange={handleScheduleChange}
             theme={theme}
           />
-
-          <Button
-            variant="outline"
-            className={cn(
-              "h-9 rounded flex items-center gap-2",
-              theme === "dark"
-                ? "border-slate-600 text-slate-300"
-                : "border-[#efefef] text-[#514f4f]",
-            )}
-          >
-            <StarIcon className="text-yellow-500 w-5 h-5" />
-            <span className="font-normal text-base">
-              Age {task.status || "0"}
-            </span>
-          </Button>
-
+          <TaskAge theme={theme} task={task} />
           <EditableProperty
             label=""
             value={

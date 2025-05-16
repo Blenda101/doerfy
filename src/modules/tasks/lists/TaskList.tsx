@@ -160,7 +160,10 @@ export const TaskList: React.FC<TaskListProps> = ({
             {lists.map((list) => {
               const listTasks = tasksByList[list.id]?.tasks || [];
               return (
-                <div key={list.id} className="max-w-sm min-w-[300px]">
+                <div
+                  key={list.id}
+                  className="max-w-sm min-w-[300px] group/list-group"
+                >
                   <ListHeader
                     listId={list.id}
                     listName={list.name}

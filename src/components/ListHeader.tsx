@@ -62,50 +62,52 @@ export const ListHeader: React.FC<ListHeaderProps> = ({
           {taskCount}
         </Badge>
       </div>
-      <Button
-        variant="ghost"
-        size="sm"
-        className="ml-2 h-8 w-8"
-        onClick={onAddTask}
-      >
-        <Plus className="w-4 h-4" />
-      </Button>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 w-6 p-0"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <MoreHorizontal
-              size={16}
-              className="text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300"
-            />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem
-            onClick={(e) => {
-              e.stopPropagation();
-              onEditList();
-            }}
-          >
-            <Edit className="w-4 h-4 mr-2" />
-            Edit
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            className="text-red-600 dark:text-red-400"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDeleteList(listId);
-            }}
-          >
-            <Trash2 className="w-4 h-4 mr-2" />
-            Delete
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <div className="opacity-0 group-hover/list-group:opacity-100 transition-opacity duration-300">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="ml-2 h-8 w-8"
+          onClick={onAddTask}
+        >
+          <Plus className="w-4 h-4" />
+        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <MoreHorizontal
+                size={16}
+                className="text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300"
+              />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              onClick={(e) => {
+                e.stopPropagation();
+                onEditList();
+              }}
+            >
+              <Edit className="w-4 h-4 mr-2" />
+              Edit
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="text-red-600 dark:text-red-400"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDeleteList(listId);
+              }}
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
     </div>
   );
 };
