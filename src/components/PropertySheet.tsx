@@ -312,12 +312,14 @@ export const PropertySheet: React.FC<PropertySheetProps> = ({
 
             <EditableProperty
               label="Story"
-              value={stories.find((s) => s.id === task.story)?.title || "None"}
+              value={
+                stories.find((s) => s.id === task.storyId)?.title || "None"
+              }
               options={stories.map((story) => ({
                 value: story.id,
                 label: story.title,
               }))}
-              onChange={(value) => handleTaskUpdate({ story: value })}
+              onChange={(value) => handleTaskUpdate({ storyId: value })}
             />
           </div>
         </TabsContent>

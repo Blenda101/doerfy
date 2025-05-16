@@ -55,7 +55,6 @@ export interface Task {
   priority: Priority;
   energy: Energy;
   location: string | null;
-  story: string | null;
   labels: string[];
   listId: string | null;
   icon: string;
@@ -73,6 +72,7 @@ export interface Task {
   attachments: any[];
   history: TaskHistoryItem[];
   schedule: TaskSchedule | null;
+  storyId: string | null;
 }
 
 // export interface Task {

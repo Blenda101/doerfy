@@ -1,0 +1,3 @@
+ALTER TABLE tasks
+ALTER COLUMN schedule_date DROP NOT NULL,
+ALTER COLUMN schedule_time DROP NOT NULL;
