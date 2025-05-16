@@ -26,12 +26,9 @@ export const useFetchTimeBoxes = () => {
     fetchUser();
   }, []);
 
-  console.log("useFetchTimeBoxes - userId:", userId);
-
   return useQuery<TimeBox[], Error>({
     queryKey: userId ? timeBoxQueryKeys.user(userId) : timeBoxQueryKeys.all,
     queryFn: async () => {
-      console.log("Fetching time boxes...");
       if (!userId) {
         console.log("No user ID, returning default time boxes");
         return defaultTimeBoxes;
@@ -60,7 +57,6 @@ export const useFetchTimeBoxes = () => {
         return inserted || defaultTimeBoxes;
       }
 
-      console.log("Fetched time boxes:", timeBoxData);
       return timeBoxData;
     },
     enabled: true,

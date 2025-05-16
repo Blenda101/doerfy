@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Calendar as BigCalendar,
   dateFnsLocalizer,
@@ -13,20 +13,11 @@ import { CalendarProps, CalendarEvent } from "./types";
 import { CustomEvent } from "./partials/CustomEvent";
 import { CustomToolbar } from "./partials/CustomToolbar";
 import withDragAndDrop from "react-big-calendar/lib/addons/dragAndDrop";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "../../../components/ui/dialog";
-import { Button } from "../../../components/ui/button";
-import { Input } from "../../../components/ui/input";
-import { Label } from "../../../components/ui/label";
 import { getDateInterval, getSlotInterval } from "./utils/getDateInterval";
 import { Task } from "../../../types/task";
 import { useTasks } from "../../../contexts/TaskContext";
 
+const DATE_CELL_HEIGHT = 25;
 const locales = {
   "en-US": enUS,
 };
@@ -48,16 +39,32 @@ const CalendarView: React.FC<CalendarProps> = (props) => {
     createTaskMutation,
     updateTaskMutation,
   } = useTasks();
-  const [view, setView] = useState<View>(Views.DAY);
+  const [view, setView] = useState<View>(Views.MONTH);
   const [date, setDate] = useState(new Date());
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<{
     start: Date;
     end: Date;
   } | null>(null);
+  const [coordinates, setCoordinates] = useState<{
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  } | null>(null);
+
   const [newTaskTitle, setNewTaskTitle] = useState("");
 
   const calendarRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // useEffect(() => {
+  //   if (calendarRef.current) {
+  //     calendarRef.current.addEventListener("mousemove", (e) => {
+  //       console.log((e.target as HTMLElement).getBoundingClientRect());
+  //     });
+  //   }
+  // }, []);
 
   // Handle event drag and drop
   const moveEvent = async ({
@@ -140,13 +147,43 @@ const CalendarView: React.FC<CalendarProps> = (props) => {
       task,
     }));
 
-  console.log({ events, tasks });
+  const handleSelectSlot = (slot: SlotInfo) => {
+    const startDateCell = document.querySelector(
+      `[data-date="${slot.start.toISOString()}"]`,
+    );
+    const endDateCell = document.querySelector(
+      `[data-date="${slot.end.toISOString()}"]`,
+    );
 
-  const handleSelectSlot = ({ start, end }: SlotInfo) => {
+    console.log(startDateCell, endDateCell);
+
+    // If there is no start or end date cell, return. Start date cell must exist end date could be null if the last cell of a month is selected
+    if ((!startDateCell && !endDateCell) || !startDateCell) return;
+
+    // If there is no end date cell, use the start date cell this happens when the last cell of a month is selected
+    const startRect = startDateCell.getBoundingClientRect();
+    const endRect = endDateCell
+      ? endDateCell.getBoundingClientRect()
+      : startRect;
+
+    console.log({ startRect, endRect });
+    const { start, end } = slot;
+    setCoordinates({
+      x: startRect.left,
+      y: startRect.top,
+      width:
+        startRect.left > endRect.left
+          ? startRect.right - startRect.left
+          : endRect.right - endRect.left,
+      height: startRect.bottom - startRect.top,
+    });
     setSelectedSlot({ start, end });
     setIsDialogOpen(true);
-    console.log({ start, end, value: getDateInterval({ start, end }) });
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
   };
+  console.log({ coordinates });
 
   const handleCreateTask = async () => {
     if (!selectedSlot || !newTaskTitle.trim()) return;
@@ -174,7 +211,7 @@ const CalendarView: React.FC<CalendarProps> = (props) => {
   }
 
   return (
-    <div className="relative flex-1 p-6" ref={calendarRef}>
+    <div className="relative flex-1 p-6 overflow-auto" ref={calendarRef}>
       <Calendar
         selectable
         resizable
@@ -197,6 +234,8 @@ const CalendarView: React.FC<CalendarProps> = (props) => {
               theme={theme}
             />
           ),
+          dateCellWrapper: CustomDateCellWrapper,
+          timeSlotWrapper: CustomTimeSlotWrapper,
         }}
         onSelectEvent={(event: CalendarEvent) => onTaskSelect(event.task)}
         onSelectSlot={handleSelectSlot}
@@ -230,8 +269,61 @@ const CalendarView: React.FC<CalendarProps> = (props) => {
             : "border-gray-200",
         )}
       />
-
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      {isDialogOpen && coordinates && (
+        <div
+          style={{
+            position: "fixed",
+            top: coordinates.y + DATE_CELL_HEIGHT,
+            left: coordinates.x,
+            width: coordinates.width,
+            height: coordinates.height - DATE_CELL_HEIGHT,
+            zIndex: 9999,
+          }}
+        >
+          <textarea
+            ref={inputRef}
+            value={newTaskTitle}
+            onChange={(e) => setNewTaskTitle(e.target.value)}
+            placeholder="Enter task description"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleCreateTask();
+                setIsDialogOpen(false);
+              }
+            }}
+            autoFocus
+            className="w-full h-full resize-none rounded-md border border-slate-300 bg-white p-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200"
+          />
+        </div>
+      )}
+      {/* <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent
+          disableOverlay
+          style={{
+            position: "fixed",
+            top: `${coordinates?.y}px`,
+            left: `${coordinates?.x}px`,
+            transform: "translate(0, 0)",
+            height: `${coordinates?.height}px`,
+            width: `${coordinates?.width}px`,
+          }}
+        >
+          <Input
+            id="title"
+            value={newTaskTitle}
+            onChange={(e) => setNewTaskTitle(e.target.value)}
+            placeholder="Enter task title"
+            className="dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                handleCreateTask();
+              }
+            }}
+          />
+        </DialogContent>
+      </Dialog> */}
+      {/* <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent
           className={cn(
             "sm:max-w-[425px]",
@@ -280,9 +372,25 @@ const CalendarView: React.FC<CalendarProps> = (props) => {
             </DialogFooter>
           </div>
         </DialogContent>
-      </Dialog>
+      </Dialog> */}
     </div>
   );
 };
 
 export default CalendarView;
+
+const CustomDateCellWrapper = (props: any) => {
+  const child = React.cloneElement(props.children, {
+    "data-date": props.value.toISOString(),
+  });
+
+  return child;
+};
+
+const CustomTimeSlotWrapper = (props: any) => {
+  const child = React.cloneElement(props.children, {
+    "data-date": props.value.toISOString(),
+  });
+
+  return child;
+};
