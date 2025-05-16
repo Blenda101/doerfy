@@ -14,17 +14,13 @@ import { cn } from "../lib/utils";
 import { Theme } from "../utils/theme";
 import { supabase } from "../utils/supabaseClient";
 import debounce from "lodash/debounce";
-import {
-  StarIcon,
-  MoreHorizontalIcon,
-  InfoIcon,
-  User,
-} from "lucide-react";
+import { StarIcon, MoreHorizontalIcon, InfoIcon, User } from "lucide-react";
 import { Sheet } from "./Sheet";
 import { Editor } from "./forms/Editor";
 import { List } from "../hooks/useLists";
 import { Story } from "../types/story";
 import { Schedule } from "./Schedule";
+import TaskAge from "./TaskAge";
 
 interface PropertySheetProps {
   task: Task;
@@ -90,7 +86,11 @@ export const PropertySheet: React.FC<PropertySheetProps> = ({
       ...updates,
       updatedAt: new Date().toISOString(),
     };
-    debouncedUpdate(updatedTask);
+    if (updates.labels) {
+      onTaskUpdate(updatedTask);
+    } else {
+      debouncedUpdate(updatedTask);
+    }
   };
 
   const handleTitleChange = (newTitle: string) => {
@@ -98,6 +98,7 @@ export const PropertySheet: React.FC<PropertySheetProps> = ({
   };
 
   const handleLabelsChange = (newLabels: string[]) => {
+    console.log(newLabels);
     handleTaskUpdate({ labels: newLabels });
   };
 
@@ -130,28 +131,13 @@ export const PropertySheet: React.FC<PropertySheetProps> = ({
       />
 
       <div className="flex justify-between items-center">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center flex-wrap gap-4">
           <Schedule
             schedule={task.schedule}
             onScheduleChange={handleScheduleChange}
             theme={theme}
           />
-
-          <Button
-            variant="outline"
-            className={cn(
-              "h-9 rounded flex items-center gap-2",
-              theme === "dark"
-                ? "border-slate-600 text-slate-300"
-                : "border-[#efefef] text-[#514f4f]",
-            )}
-          >
-            <StarIcon className="text-yellow-500 w-5 h-5" />
-            <span className="font-normal text-base">
-              Age {task.status || "0"}
-            </span>
-          </Button>
-
+          <TaskAge theme={theme} task={task} />
           <EditableProperty
             label=""
             value={
@@ -326,12 +312,14 @@ export const PropertySheet: React.FC<PropertySheetProps> = ({
 
             <EditableProperty
               label="Story"
-              value={stories.find((s) => s.id === task.story)?.title || "None"}
+              value={
+                stories.find((s) => s.id === task.storyId)?.title || "None"
+              }
               options={stories.map((story) => ({
                 value: story.id,
                 label: story.title,
               }))}
-              onChange={(value) => handleTaskUpdate({ story: value })}
+              onChange={(value) => handleTaskUpdate({ storyId: value })}
             />
           </div>
         </TabsContent>

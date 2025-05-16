@@ -1,5 +1,5 @@
 /* styles/globals.css */
-@import 'react-datepicker/dist/react-datepicker.css';
+@import "react-datepicker/dist/react-datepicker.css";
 
 .rbc-calendar {
   @apply font-sans;
@@ -63,4 +63,13 @@
 
 .rbc-current-time-indicator {
   @apply dark:bg-purple-500;
+}
+
+/* Example: Purple border for today, no background */
+.rbc-month-view .rbc-today {
+  background: white !important; /* Remove default bg */
+  border-top: 2px solid green !important;
+  border-bottom: 2px solid green !important;
+  /* border-bottom: 2px solid green !important;
+  box-sizing: border-box; */
 }

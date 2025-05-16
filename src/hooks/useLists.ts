@@ -5,9 +5,9 @@ import { toast } from "react-hot-toast";
 export interface List {
   id: string;
   name: string;
-  description: string;
-  icon: string;
-  color: string;
+  description: string | null;
+  icon: string | null;
+  color: string | null;
 }
 
 interface UseListsReturn {

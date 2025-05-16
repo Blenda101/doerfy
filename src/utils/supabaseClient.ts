@@ -1,12 +1,12 @@
-import { createClient } from '@supabase/supabase-js';
-import { Database } from '../types/supabase';
+import { createClient } from "@supabase/supabase-js";
+import { Database } from "../types/supabase";
 
 if (!import.meta.env.VITE_SUPABASE_URL) {
-  throw new Error('Missing environment variable: VITE_SUPABASE_URL');
+  throw new Error("Missing environment variable: VITE_SUPABASE_URL");
 }
 
 if (!import.meta.env.VITE_SUPABASE_ANON_KEY) {
-  throw new Error('Missing environment variable: VITE_SUPABASE_ANON_KEY');
+  throw new Error("Missing environment variable: VITE_SUPABASE_ANON_KEY");
 }
 
 export const supabase = createClient<Database>(
@@ -17,24 +17,28 @@ export const supabase = createClient<Database>(
       persistSession: true,
       autoRefreshToken: true,
     },
-  }
+  },
 );
 
 // Helper function to check if user is authenticated
 export async function isAuthenticated(): Promise<boolean> {
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   return !!user;
 }
 
 // Helper function to check if user is an admin
 export async function isAdmin(): Promise<boolean> {
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) return false;
 
   const { data: profile } = await supabase
-    .from('profiles')
-    .select('is_admin')
-    .eq('id', user.id)
+    .from("profiles")
+    .select("is_admin")
+    .eq("id", user.id)
     .single();
 
   return profile?.is_admin || false;
@@ -42,7 +46,9 @@ export async function isAdmin(): Promise<boolean> {
 
 // Helper function to get current user
 export async function getCurrentUser() {
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   return user;
 }
 
@@ -50,13 +56,13 @@ export async function getCurrentUser() {
 export async function signInWithEmail(email: string, password: string) {
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
-    password
+    password,
   });
-  
+
   if (error) {
     throw error;
   }
-  
+
   return data;
 }
 
@@ -64,13 +70,13 @@ export async function signInWithEmail(email: string, password: string) {
 export async function signUpWithEmail(email: string, password: string) {
   const { data, error } = await supabase.auth.signUp({
     email,
-    password
+    password,
   });
-  
+
   if (error) {
     throw error;
   }
-  
+
   return data;
 }
 
@@ -85,8 +91,8 @@ export async function signOut() {
 // Helper function to get all users (admin only)
 export async function getAllUsers() {
   const { data: users, error } = await supabase
-    .from('profiles')
-    .select('*, auth_user:id(email)');
+    .from("profiles")
+    .select("*, auth_user:id(email)");
 
   if (error) {
     throw error;
@@ -98,9 +104,9 @@ export async function getAllUsers() {
 // Helper function to update user role
 export async function updateUserRole(userId: string, isAdmin: boolean) {
   const { error } = await supabase
-    .from('profiles')
+    .from("profiles")
     .update({ is_admin: isAdmin })
-    .eq('id', userId);
+    .eq("id", userId);
 
   if (error) {
     throw error;

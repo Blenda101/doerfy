@@ -37,10 +37,11 @@ export const EditableProperty: React.FC<EditablePropertyProps> = ({
   const [isHovered, setIsHovered] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [editValue, setEditValue] = useState(value);
+  const [editValue, setEditValue] = useState<string>(value);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  console.log({ select: editValue, value });
   useEffect(() => {
     setEditValue(value);
   }, [value]);

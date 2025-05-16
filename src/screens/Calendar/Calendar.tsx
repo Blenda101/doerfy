@@ -402,8 +402,8 @@ export const Calendar: React.FC<CalendarProps> = ({
           ),
         }}
         onSelectEvent={(event: CalendarEvent) => onTaskSelect(event.task)}
-        onEventDrop={handleEventDrop as any}
-        draggableAccessor={() => true}
+        // onEventDrop={handleEventDrop as any}
+        // draggableAccessor={() => true}
         className={cn(
           "rounded-lg border",
           theme === "dark"

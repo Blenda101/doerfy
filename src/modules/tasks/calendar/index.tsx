@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Calendar as BigCalendar,
   dateFnsLocalizer,
@@ -12,21 +12,12 @@ import { cn } from "../../../lib/utils";
 import { CalendarProps, CalendarEvent } from "./types";
 import { CustomEvent } from "./partials/CustomEvent";
 import { CustomToolbar } from "./partials/CustomToolbar";
-import { useTasks } from "./hooks/useTasks";
 import withDragAndDrop from "react-big-calendar/lib/addons/dragAndDrop";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "../../../components/ui/dialog";
-import { Button } from "../../../components/ui/button";
-import { Input } from "../../../components/ui/input";
-import { Label } from "../../../components/ui/label";
 import { getDateInterval, getSlotInterval } from "./utils/getDateInterval";
 import { Task } from "../../../types/task";
+import { useTasks } from "../../../contexts/TaskContext";
 
+const DATE_CELL_HEIGHT = 25;
 const locales = {
   "en-US": enUS,
 };
@@ -41,17 +32,39 @@ const Calendar = withDragAndDrop<CalendarEvent>(BigCalendar);
 
 const CalendarView: React.FC<CalendarProps> = (props) => {
   const { theme = "light", onTaskSelect } = props;
-  const { tasks, isLoading, error, createTask, updateTask } = useTasks();
-  const [view, setView] = useState<View>(Views.DAY);
+  const {
+    tasks,
+    isLoadingTasks,
+    tasksError,
+    createTaskMutation,
+    updateTaskMutation,
+  } = useTasks();
+  const [view, setView] = useState<View>(Views.MONTH);
   const [date, setDate] = useState(new Date());
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<{
     start: Date;
     end: Date;
   } | null>(null);
+  const [coordinates, setCoordinates] = useState<{
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  } | null>(null);
+
   const [newTaskTitle, setNewTaskTitle] = useState("");
 
   const calendarRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // useEffect(() => {
+  //   if (calendarRef.current) {
+  //     calendarRef.current.addEventListener("mousemove", (e) => {
+  //       console.log((e.target as HTMLElement).getBoundingClientRect());
+  //     });
+  //   }
+  // }, []);
 
   // Handle event drag and drop
   const moveEvent = async ({
@@ -79,7 +92,10 @@ const CalendarView: React.FC<CalendarProps> = (props) => {
         updatedAt: new Date().toISOString(),
       };
 
-      await updateTask(updatedTask);
+      updateTaskMutation.mutate({
+        taskId: updatedTask.id,
+        updates: updatedTask,
+      });
     } catch (error) {
       console.error("Error moving task:", error);
     }
@@ -110,8 +126,10 @@ const CalendarView: React.FC<CalendarProps> = (props) => {
         },
         updatedAt: new Date().toISOString(),
       };
-      console.log({ updatedTask });
-      await updateTask(updatedTask);
+      updateTaskMutation.mutate({
+        taskId: updatedTask.id,
+        updates: updatedTask,
+      });
     } catch (error) {
       console.error("Error resizing task:", error);
     }
@@ -129,19 +147,67 @@ const CalendarView: React.FC<CalendarProps> = (props) => {
       task,
     }));
 
-  console.log({ events, tasks });
+  const handleSelectSlot = (slot: SlotInfo) => {
+    const startDateCell = document.querySelector(
+      `${
+        view !== Views.MONTH
+          ? ".rbc-day-slot:not(.rbc-time-gutter) .rbc-time-slot"
+          : ""
+      }[data-date="${slot.start.toISOString()}"]`,
+    );
+    const endDateCell = document.querySelector(
+      `${
+        view !== Views.MONTH
+          ? ".rbc-day-slot:not(.rbc-time-gutter) .rbc-time-slot"
+          : ""
+      }[data-date="${slot.end.toISOString()}"]`,
+    );
 
-  const handleSelectSlot = ({ start, end }: SlotInfo) => {
+    // If there is no start or end date cell, return. Start date cell must exist end date could be null if the last cell of a month is selected
+    if ((!startDateCell && !endDateCell) || !startDateCell) return;
+
+    // If there is no end date cell, use the start date cell this happens when the last cell of a month is selected
+    const startRect = startDateCell.getBoundingClientRect();
+    const endRect = endDateCell
+      ? endDateCell.getBoundingClientRect()
+      : startRect;
+
+    const { start, end } = slot;
+    if (view === Views.MONTH) {
+      setCoordinates({
+        x: startRect.left,
+        y: startRect.top + DATE_CELL_HEIGHT,
+        width:
+          startRect.left > endRect.left
+            ? startRect.right - startRect.left
+            : endRect.right - endRect.left,
+        height: startRect.bottom - startRect.top - DATE_CELL_HEIGHT,
+      });
+    } else {
+      setCoordinates({
+        x: startRect.left,
+        y: startRect.top,
+        width: startRect.right - startRect.left,
+        height: endRect.top - startRect.top,
+      });
+    }
     setSelectedSlot({ start, end });
     setIsDialogOpen(true);
-    console.log({ start, end, value: getDateInterval({ start, end }) });
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
   };
 
   const handleCreateTask = async () => {
     if (!selectedSlot || !newTaskTitle.trim()) return;
 
     try {
-      await createTask(newTaskTitle.trim(), selectedSlot);
+      createTaskMutation.mutate({
+        taskData: {
+          title: newTaskTitle.trim(),
+        },
+        slot: selectedSlot,
+      });
       setNewTaskTitle("");
       setIsDialogOpen(false);
     } catch (error) {
@@ -149,124 +215,131 @@ const CalendarView: React.FC<CalendarProps> = (props) => {
     }
   };
 
-  if (isLoading) {
+  if (isLoadingTasks) {
     return <div>Loading...</div>;
   }
 
-  if (error) {
-    return <div>Error: {error.message}</div>;
+  if (tasksError) {
+    return <div>Error: {tasksError.message}</div>;
   }
 
   return (
-    <div className="relative flex-1 p-6" ref={calendarRef}>
-      <Calendar
-        selectable
-        resizable
-        localizer={localizer}
-        events={events}
-        startAccessor="start"
-        endAccessor="end"
-        views={[Views.MONTH, Views.WEEK, Views.DAY]}
-        view={view}
-        onView={setView}
-        date={date}
-        onNavigate={setDate}
-        components={{
-          event: CustomEvent,
-          toolbar: (props) => (
-            <CustomToolbar
-              toolbar={props}
-              view={view}
-              onViewChange={setView}
-              theme={theme}
-            />
-          ),
-        }}
-        onSelectEvent={(event: CalendarEvent) => onTaskSelect(event.task)}
-        onSelectSlot={handleSelectSlot}
-        onEventDrop={moveEvent as any}
-        onEventResize={resizeEvent as any}
-        draggableAccessor={() => true}
-        slotPropGetter={(date) => {
-          if (
-            selectedSlot &&
-            date >= selectedSlot.start &&
-            date < selectedSlot.end
-          ) {
+    <div className="relative flex-1 p-6 overflow-auto" ref={calendarRef}>
+      <div
+        className={cn(
+          "rounded-lg",
+          view === Views.MONTH &&
+            "border border-slate-200 dark:border-slate-700 shadow-sm",
+        )}
+      >
+        <Calendar
+          selectable
+          resizable
+          localizer={localizer}
+          events={events}
+          startAccessor="start"
+          endAccessor="end"
+          views={[Views.MONTH, Views.WEEK, Views.DAY]}
+          view={view}
+          onView={setView}
+          date={date}
+          onNavigate={setDate}
+          components={{
+            event: CustomEvent,
+            toolbar: (props) => (
+              <CustomToolbar
+                toolbar={props}
+                view={view}
+                onViewChange={setView}
+                theme={theme}
+              />
+            ),
+            dateCellWrapper: CustomDateCellWrapper,
+            timeSlotWrapper: CustomTimeSlotWrapper,
+          }}
+          onSelectEvent={(event: CalendarEvent) => onTaskSelect(event.task)}
+          onSelectSlot={handleSelectSlot}
+          onEventDrop={moveEvent as any}
+          onEventResize={resizeEvent as any}
+          draggableAccessor={() => true}
+          slotPropGetter={(date) => {
+            if (
+              selectedSlot &&
+              date >= selectedSlot.start &&
+              date < selectedSlot.end
+            ) {
+              return {
+                style: {
+                  backgroundColor: "rgba(80, 54, 176, 0.1)",
+                },
+              };
+            }
             return {
               style: {
-                backgroundColor: "rgba(80, 54, 176, 0.1)",
+                backgroundColor: view === Views.MONTH ? "white" : undefined,
+                border: "none",
               },
             };
-          }
-          return {
-            style: {
-              backgroundColor: "white",
-              border: "none",
-            },
-          };
-        }}
-        style={{ height: "calc(100vh - 160px)" }}
-        className={cn(
-          "rounded-lg border",
-          theme === "dark"
-            ? "border-slate-700 bg-slate-800 text-white"
-            : "border-gray-200",
-        )}
-      />
-
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent
+          }}
+          style={{ height: "calc(100vh - 160px)" }}
           className={cn(
-            "sm:max-w-[425px]",
-            "dark:bg-slate-800 dark:border-slate-700",
+            "rounded-lg",
+            theme === "dark" ? "bg-slate-800 text-white" : "bg-white",
+            (view === Views.WEEK || view === Views.DAY) && "custom-dnd-bg",
           )}
+        />
+      </div>
+      {isDialogOpen && coordinates && (
+        <div
+          className="z-40 fixed"
+          style={{
+            top: coordinates.y,
+            left: coordinates.x,
+            width: coordinates.width,
+            height: coordinates.height,
+          }}
         >
-          <DialogHeader>
-            <DialogTitle className="dark:text-slate-200">
-              Create New Task
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="title" className="dark:text-slate-200">
-                Task Title
-              </Label>
-              <Input
-                id="title"
-                value={newTaskTitle}
-                onChange={(e) => setNewTaskTitle(e.target.value)}
-                placeholder="Enter task title"
-                className="dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    handleCreateTask();
-                  }
-                }}
-              />
-            </div>
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsDialogOpen(false)}
-                className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleCreateTask}
-                disabled={!newTaskTitle.trim()}
-                className="dark:bg-purple-600 dark:text-white dark:hover:bg-purple-700"
-              >
-                Create Task
-              </Button>
-            </DialogFooter>
-          </div>
-        </DialogContent>
-      </Dialog>
+          <textarea
+            ref={inputRef}
+            value={newTaskTitle}
+            onChange={(e) => setNewTaskTitle(e.target.value)}
+            placeholder="Enter task description"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleCreateTask();
+                setIsDialogOpen(false);
+              }
+            }}
+            onBlur={() => {
+              setIsDialogOpen(false);
+              setCoordinates(null);
+              setSelectedSlot(null);
+              setNewTaskTitle("");
+            }}
+            autoFocus
+            className="w-full h-full resize-none rounded-md border border-slate-300 bg-white p-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200"
+          />
+        </div>
+      )}
     </div>
   );
 };
 
 export default CalendarView;
+
+const CustomDateCellWrapper = (props: any) => {
+  const child = React.cloneElement(props.children, {
+    "data-date": props.value.toISOString(),
+  });
+
+  return child;
+};
+
+const CustomTimeSlotWrapper = (props: any) => {
+  const child = React.cloneElement(props.children, {
+    "data-date": props.value.toISOString(),
+  });
+
+  return child;
+};

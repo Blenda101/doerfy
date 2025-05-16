@@ -6,11 +6,7 @@ import { LabelEditor } from "./LabelEditor";
 import { Story, StoryType } from "../types/story";
 import { cn } from "../lib/utils";
 import { Theme } from "../utils/theme";
-import {
-  Calendar,
-  InfoIcon,
-} from "lucide-react";
-
+import { Calendar, InfoIcon } from "lucide-react";
 
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -43,6 +39,8 @@ export const StoryPanel: React.FC<StoryPanelProps> = ({
     });
   };
 
+  console.log({ story, stories, parent: story.parentId });
+
   return (
     <Sheet
       title={`About ${getStoryTypeLabel(story.type)}`}
@@ -57,11 +55,13 @@ export const StoryPanel: React.FC<StoryPanelProps> = ({
           <EditableProperty
             label=""
             placeholder="Select Parent"
-            value={story.parentId!}
-            options={stories.map((story) => ({
-              value: story.id,
-              label: story.title,
-            }))}
+            value={story.parentId || ""}
+            options={stories
+              .filter((s) => s.title !== "")
+              .map((story) => ({
+                value: story.id,
+                label: story.title,
+              }))}
             onChange={(parentId) => handleUpdate({ parentId })}
             disabled={stories.length === 0}
           />

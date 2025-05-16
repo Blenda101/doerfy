@@ -50,7 +50,7 @@ export const StoryCard: React.FC<StoryCardProps> = ({
   return (
     <div
       className={cn(
-        "p-4 rounded-lg border transition-all duration-200 cursor-pointer group flex flex-col",
+        "p-4 rounded-lg border transition-all duration-200 cursor-pointer flex flex-col",
         "hover:shadow-lg hover:scale-[1.02]",
         theme === "dark"
           ? "bg-slate-800 border-slate-700 hover:border-slate-600"
@@ -83,7 +83,7 @@ export const StoryCard: React.FC<StoryCardProps> = ({
             </Badge>
           ))}
         </div>
-        <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex items-center space-x-2">
           <StoryHoverCard story={story}>
             <Button
               variant="ghost"

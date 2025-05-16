@@ -44,7 +44,7 @@ function getSlotInterval(schedule: TaskSchedule): ScheduleInput {
 
   const { time, durationDays = 0, durationHours = 0 } = schedule;
 
-  const [hours, minutes, seconds] = time.split(":").map(Number);
+  const [hours, minutes, seconds] = time!.split(":").map(Number);
 
   // Construct start time based on date and time components (in UTC)
   const start = new Date(

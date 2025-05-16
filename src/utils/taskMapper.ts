@@ -25,7 +25,7 @@ export function mapTaskFromSupabase(
     priority: data.priority as Priority,
     energy: data.energy as Energy,
     location: data.location,
-    story: data.story,
+    story: data.story_id,
     labels: data.labels || [],
     icon: data.icon ?? "",
     showInTimeBox: data.show_in_time_box ?? true,
@@ -95,7 +95,6 @@ export function mapTaskToSupabase(task: Task): TaskFromSupabase {
     created_by: task.createdBy,
     energy: task.energy,
     location: task.location,
-    story: task.story,
     story_id: task.story ?? null,
     labels: task.labels,
     icon: task.icon,
@@ -105,9 +104,12 @@ export function mapTaskToSupabase(task: Task): TaskFromSupabase {
     highlighted: task.highlighted,
     status: task.status ?? null,
     priority: task.priority,
-    updated_at: task.updatedAt,
+    updated_at: task.updatedAt || new Date().toISOString(),
     schedule_date: task.schedule?.date?.toISOString() ?? null,
-    schedule_time: task.schedule?.time ?? null,
+    schedule_time:
+      task.schedule?.time === "" || !task.schedule?.time
+        ? null
+        : task.schedule?.time,
     lead_days: task.schedule?.leadDays ?? 0,
     lead_hours: task.schedule?.leadHours ?? 0,
     duration_days: task.schedule?.durationDays ?? 0,
