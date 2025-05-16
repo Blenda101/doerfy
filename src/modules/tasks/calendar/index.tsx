@@ -276,7 +276,7 @@ const CalendarView: React.FC<CalendarProps> = (props) => {
             }
             return {
               style: {
-                backgroundColor: "white",
+                backgroundColor: view === Views.MONTH ? "white" : undefined,
                 border: "none",
               },
             };
@@ -285,6 +285,7 @@ const CalendarView: React.FC<CalendarProps> = (props) => {
           className={cn(
             "rounded-lg",
             theme === "dark" ? "bg-slate-800 text-white" : "bg-white",
+            (view === Views.WEEK || view === Views.DAY) && "custom-dnd-bg",
           )}
         />
       </div>

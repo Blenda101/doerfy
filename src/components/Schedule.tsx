@@ -64,7 +64,9 @@ export const Schedule: React.FC<ScheduleProps> = ({
     // Time Part
     if (schedule.time) {
       const timeIcon = schedule.alarmEnabled ? "🔔" : "🕒";
-      let timePart = `${timeIcon} ${schedule.time}`;
+      const time = new Date(`2000-01-01T${schedule.time}`);
+      const formattedTime = format(time, "h:mm a");
+      let timePart = `${timeIcon} ${formattedTime}`;
 
       if (schedule.leadHours || schedule.durationHours) {
         const leadPart = schedule.leadHours ? `L${schedule.leadHours}h` : "";
