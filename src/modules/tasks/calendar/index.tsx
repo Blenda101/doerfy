@@ -149,13 +149,19 @@ const CalendarView: React.FC<CalendarProps> = (props) => {
 
   const handleSelectSlot = (slot: SlotInfo) => {
     const startDateCell = document.querySelector(
-      `[data-date="${slot.start.toISOString()}"]`,
+      `${
+        view !== Views.MONTH
+          ? ".rbc-day-slot:not(.rbc-time-gutter) .rbc-time-slot"
+          : ""
+      }[data-date="${slot.start.toISOString()}"]`,
     );
     const endDateCell = document.querySelector(
-      `[data-date="${slot.end.toISOString()}"]`,
+      `${
+        view !== Views.MONTH
+          ? ".rbc-day-slot:not(.rbc-time-gutter) .rbc-time-slot"
+          : ""
+      }[data-date="${slot.end.toISOString()}"]`,
     );
-
-    console.log(startDateCell, endDateCell);
 
     // If there is no start or end date cell, return. Start date cell must exist end date could be null if the last cell of a month is selected
     if ((!startDateCell && !endDateCell) || !startDateCell) return;
@@ -166,24 +172,31 @@ const CalendarView: React.FC<CalendarProps> = (props) => {
       ? endDateCell.getBoundingClientRect()
       : startRect;
 
-    console.log({ startRect, endRect });
     const { start, end } = slot;
-    setCoordinates({
-      x: startRect.left,
-      y: startRect.top,
-      width:
-        startRect.left > endRect.left
-          ? startRect.right - startRect.left
-          : endRect.right - endRect.left,
-      height: startRect.bottom - startRect.top,
-    });
+    if (view === Views.MONTH) {
+      setCoordinates({
+        x: startRect.left,
+        y: startRect.top + DATE_CELL_HEIGHT,
+        width:
+          startRect.left > endRect.left
+            ? startRect.right - startRect.left
+            : endRect.right - endRect.left,
+        height: startRect.bottom - startRect.top - DATE_CELL_HEIGHT,
+      });
+    } else {
+      setCoordinates({
+        x: startRect.left,
+        y: startRect.top,
+        width: startRect.right - startRect.left,
+        height: endRect.top - startRect.top,
+      });
+    }
     setSelectedSlot({ start, end });
     setIsDialogOpen(true);
     if (inputRef.current) {
       inputRef.current.focus();
     }
   };
-  console.log({ coordinates });
 
   const handleCreateTask = async () => {
     if (!selectedSlot || !newTaskTitle.trim()) return;
@@ -273,10 +286,10 @@ const CalendarView: React.FC<CalendarProps> = (props) => {
         <div
           style={{
             position: "fixed",
-            top: coordinates.y + DATE_CELL_HEIGHT,
+            top: coordinates.y,
             left: coordinates.x,
             width: coordinates.width,
-            height: coordinates.height - DATE_CELL_HEIGHT,
+            height: coordinates.height,
             zIndex: 9999,
           }}
         >
@@ -297,82 +310,6 @@ const CalendarView: React.FC<CalendarProps> = (props) => {
           />
         </div>
       )}
-      {/* <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent
-          disableOverlay
-          style={{
-            position: "fixed",
-            top: `${coordinates?.y}px`,
-            left: `${coordinates?.x}px`,
-            transform: "translate(0, 0)",
-            height: `${coordinates?.height}px`,
-            width: `${coordinates?.width}px`,
-          }}
-        >
-          <Input
-            id="title"
-            value={newTaskTitle}
-            onChange={(e) => setNewTaskTitle(e.target.value)}
-            placeholder="Enter task title"
-            className="dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200"
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                handleCreateTask();
-              }
-            }}
-          />
-        </DialogContent>
-      </Dialog> */}
-      {/* <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent
-          className={cn(
-            "sm:max-w-[425px]",
-            "dark:bg-slate-800 dark:border-slate-700",
-          )}
-        >
-          <DialogHeader>
-            <DialogTitle className="dark:text-slate-200">
-              Create New Task
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="title" className="dark:text-slate-200">
-                Task Title
-              </Label>
-              <Input
-                id="title"
-                value={newTaskTitle}
-                onChange={(e) => setNewTaskTitle(e.target.value)}
-                placeholder="Enter task title"
-                className="dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    handleCreateTask();
-                  }
-                }}
-              />
-            </div>
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsDialogOpen(false)}
-                className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleCreateTask}
-                disabled={!newTaskTitle.trim()}
-                className="dark:bg-purple-600 dark:text-white dark:hover:bg-purple-700"
-              >
-                Create Task
-              </Button>
-            </DialogFooter>
-          </div>
-        </DialogContent>
-      </Dialog> */}
     </div>
   );
 };
