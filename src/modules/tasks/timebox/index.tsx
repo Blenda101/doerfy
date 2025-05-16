@@ -1,45 +1,43 @@
-import React, { useState, useEffect } from "react";
-import { TaskColumn } from "../../components/TaskColumn";
-import { TodoQueue } from "../../components/TodoQueue";
-import { Task } from "../../types/task";
-import { Story, mapStoryFromSupabase } from "../../types/story";
-import { TimeBox, TimeBoxStage } from "../../types/timeBox";
-import { TimeBoxConfig } from "../../components/TimeBoxDialog";
-import { Theme } from "../../utils/theme";
+import React, { useState } from "react";
+import { TaskColumn } from "../../../components/TaskColumn";
+import { TodoQueue } from "../../../components/TodoQueue";
+import { Task } from "../../../types/task";
+import { Story } from "../../../types/story";
+import { TimeBox, TimeBoxStage } from "../../../types/timeBox";
+import { TimeBoxConfig } from "../../../components/TimeBoxDialog";
+import { Theme } from "../../../utils/theme";
 import { toast } from "react-hot-toast";
-import { useTasks } from "../../contexts/TaskContext";
-
-// Import hooks from new location
-import {
-  useFetchTimeBoxes,
-  useUpdateTimeBoxConfig,
-  useUpdateTimeBoxOrder,
-} from "../../hooks/timeBoxHooks";
+import { useTasks } from "../../../contexts/TaskContext";
 import {
   useFetchTodos,
   useUpdateStoryStatus,
   useDeleteStory,
-} from "../../hooks/storyHooks";
+} from "../../../hooks/storyHooks";
+import {
+  useUpdateTimeBoxConfig,
+  useUpdateTimeBoxOrder,
+} from "../../../hooks/timeBoxHooks";
 
 interface PtbTimeBoxProps {
   theme?: Theme;
   onTaskSelect?: (task: Task) => void;
   selectedTaskId?: string | null;
+  sortedTimeBoxesWithTasks?: Array<TimeBox & { tasks: Task[] }>;
 }
 
 export const PtbTimeBox: React.FC<PtbTimeBoxProps> = ({
   theme = "light",
   onTaskSelect,
   selectedTaskId,
+  sortedTimeBoxesWithTasks = [],
 }) => {
-  const { tasks, createTaskMutation, updateTaskMutation, deleteTaskMutation } =
-    useTasks();
+  console.log(
+    "PtbTimeBox received sortedTimeBoxesWithTasks:",
+    sortedTimeBoxesWithTasks,
+  );
 
-  const {
-    data: timeBoxes = [],
-    isLoading: isLoadingTimeBoxes,
-    error: timeBoxesError,
-  } = useFetchTimeBoxes();
+  const { updateTaskMutation, deleteTaskMutation, createTaskMutation } =
+    useTasks();
 
   const {
     data: todos = [],
@@ -81,7 +79,7 @@ export const PtbTimeBox: React.FC<PtbTimeBoxProps> = ({
       createTaskMutation.mutate(
         { taskData: newTaskData },
         {
-          onSuccess: (newTask) => {
+          onSuccess: (newTask: Task | undefined) => {
             if (newTask && onTaskSelect) {
               onTaskSelect(newTask);
               setActiveTimeStage(timeStage);
@@ -111,13 +109,15 @@ export const PtbTimeBox: React.FC<PtbTimeBoxProps> = ({
   };
 
   const handleTimeBoxMove = (timeStageId: string, direction: "up" | "down") => {
-    const currentIndex = timeBoxes.findIndex((tb) => tb.id === timeStageId);
+    const currentIndex = sortedTimeBoxesWithTasks.findIndex(
+      (tb) => tb.id === timeStageId,
+    );
     if (currentIndex === -1) return;
 
     const newIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
-    if (newIndex < 0 || newIndex >= timeBoxes.length) return;
+    if (newIndex < 0 || newIndex >= sortedTimeBoxesWithTasks.length) return;
 
-    const updatedTimeBoxesList = [...timeBoxes];
+    const updatedTimeBoxesList = [...sortedTimeBoxesWithTasks];
     const temp = updatedTimeBoxesList[currentIndex];
     updatedTimeBoxesList[currentIndex] = updatedTimeBoxesList[newIndex];
     updatedTimeBoxesList[newIndex] = temp;
@@ -147,7 +147,7 @@ export const PtbTimeBox: React.FC<PtbTimeBoxProps> = ({
       createTaskMutation.mutate(
         { taskData: newTaskData },
         {
-          onSuccess: (newTask) => {
+          onSuccess: (newTask: Task | undefined) => {
             if (newTask) {
               if (onTaskSelect) onTaskSelect(newTask);
               setActiveTimeStage(timeStage as TimeBoxStage);
@@ -171,28 +171,6 @@ export const PtbTimeBox: React.FC<PtbTimeBoxProps> = ({
     deleteStoryMutation.mutate(todo.id);
   };
 
-  const getTasksByStage = (stage: TimeBoxStage) => {
-    return tasks.filter(
-      (task) => task.timeStage === stage && task.showInTimeBox,
-    );
-  };
-
-  if (isLoadingTimeBoxes || isLoadingTodos) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-purple-500"></div>
-        <p className="ml-4 text-lg">Loading TimeBox data...</p>
-      </div>
-    );
-  }
-
-  if (timeBoxesError) {
-    return (
-      <div className="text-red-500 p-4">
-        Error loading time boxes: {timeBoxesError.message}
-      </div>
-    );
-  }
   if (todosError) {
     return (
       <div className="text-red-500 p-4">
@@ -213,18 +191,17 @@ export const PtbTimeBox: React.FC<PtbTimeBoxProps> = ({
         onDeleteTodo={handleDeleteTodo}
       />
 
-      {timeBoxes
-        .slice()
-        .sort((a, b) => a.sort_order - b.sort_order)
-        .map((timeBox) => {
-          const stageTasks = getTasksByStage(timeBox.id as TimeBoxStage);
+      {(() => {
+        console.log("About to render timeBoxes:", sortedTimeBoxesWithTasks);
+        return sortedTimeBoxesWithTasks?.map((timeBox) => {
+          console.log("Rendering timeBox:", timeBox);
           return (
             <TaskColumn
               key={timeBox.id}
               title={timeBox.name}
-              count={stageTasks.length}
-              tasks={stageTasks}
-              badgeCount={stageTasks.length}
+              count={timeBox.tasks.length}
+              tasks={timeBox.tasks}
+              badgeCount={timeBox.tasks.length}
               defaultExpanded={timeBox.id !== "doing" && timeBox.id !== "done"}
               timeStage={timeBox.id as TimeBoxStage}
               onTaskSelect={handleTaskSelectInternal}
@@ -237,14 +214,15 @@ export const PtbTimeBox: React.FC<PtbTimeBoxProps> = ({
               isActive={activeTimeStage === timeBox.id}
               canMoveUp={timeBox.sort_order > 0}
               canMoveDown={
-                timeBoxes.length > 0 &&
-                timeBox.sort_order < timeBoxes.length - 1
+                sortedTimeBoxesWithTasks.length > 0 &&
+                timeBox.sort_order < sortedTimeBoxesWithTasks.length - 1
               }
               expireThreshold={timeBox.expireThreshold || 0}
               selectedTaskId={selectedTaskId}
             />
           );
-        })}
+        });
+      })()}
     </div>
   );
 };

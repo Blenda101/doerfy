@@ -1,29 +1,28 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Tabs, TabsContent } from "../../components/ui/tabs";
 import { Sidebar } from "../../components/Sidebar";
 import { TasksHeader } from "../../components/TasksHeader";
 import { FilterHeader } from "../../components/FilterHeader";
 import { FilterPanel } from "../../components/FilterPanel";
 import { PropertySheet } from "../../components/PropertySheet";
-import { PtbTimeBox } from "../../screens/PtbTimeBox/PtbTimeBox";
-import { TaskList } from "../../screens/TaskList/TaskList";
+import { PtbTimeBox } from "./timebox";
+import { TaskList } from "./lists/TaskList";
 import CalendarView from "./calendar";
 import {
   Theme,
   getInitialTheme,
   setTheme as setThemeUtil,
 } from "../../utils/theme";
-import { supabase } from "../../utils/supabaseClient";
 import { cn } from "../../lib/utils";
 import { Filter, ListIcon, CalendarIcon } from "lucide-react";
 import { toast } from "react-hot-toast";
-import { Task, TaskFromSupabase } from "../../types/task";
+import { Task } from "../../types/task";
 import ToggleButton from "../../components/ui/toggle";
 import { useLists } from "../../hooks/useLists";
 import useStories from "../../hooks/useStories";
-import { mapTaskFromSupabase, mapTaskToSupabase } from "../../utils/taskMapper";
 import { TaskProvider } from "../../contexts/TaskContext";
 import { useTasks } from "../../contexts/TaskContext";
+import { useFetchTimeBoxes } from "../../hooks/timeBoxHooks";
 
 const STORAGE_KEYS = {
   ACTIVE_TAB: "activeTaskTab",
@@ -60,13 +59,38 @@ const TasksComponent: React.FC = () => {
     getTaskById,
     updateTaskMutation,
   } = useTasks();
-
+  const {
+    data: timeBoxes = [],
+    isLoading: isLoadingTimeBoxes,
+    error: timeBoxesError,
+  } = useFetchTimeBoxes();
   const { lists, setLists } = useLists();
   const { stories } = useStories("todo");
 
   const [selectedTaskForSheet, setSelectedTaskForSheet] = useState<Task | null>(
     null,
   );
+
+  const isLoading = tasksLoading || isLoadingTimeBoxes;
+  const error = tasksErrorContext || timeBoxesError;
+
+  const sortedTimeBoxesWithTasks = useMemo(() => {
+    if (!timeBoxes?.length || !tasks?.length) {
+      return [];
+    }
+
+    const result = timeBoxes
+      .slice()
+      .sort((a, b) => a.sort_order - b.sort_order)
+      .map((timeBox) => ({
+        ...timeBox,
+        tasks: tasks.filter(
+          (task) => task.timeStage === timeBox.id && task.showInTimeBox,
+        ),
+      }));
+
+    return result;
+  }, [timeBoxes, tasks]);
 
   useEffect(() => {
     setThemeUtil(theme);
@@ -114,7 +138,6 @@ const TasksComponent: React.FC = () => {
             if (selectedTaskForSheet && selectedTaskForSheet.id === result.id) {
               setSelectedTaskForSheet(result);
             }
-            toast.success("Task updated successfully via context");
           } else {
             toast.error("Failed to update task: No result from mutation");
           }
@@ -153,19 +176,20 @@ const TasksComponent: React.FC = () => {
     }
   };
 
-  if (tasksLoading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-purple-500"></div>
+        <p className="ml-4 text-lg">Loading data...</p>
       </div>
     );
   }
 
-  if (tasksErrorContext) {
+  if (error) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-red-500 p-4 bg-red-100 border border-red-400 rounded">
-          Error loading tasks: {tasksErrorContext.message}
+          Error loading data: {error.message}
         </div>
       </div>
     );
@@ -231,6 +255,7 @@ const TasksComponent: React.FC = () => {
                 theme={theme}
                 onTaskSelect={handleTaskSelect}
                 selectedTaskId={selectedLocalTaskId}
+                sortedTimeBoxesWithTasks={sortedTimeBoxesWithTasks}
               />
             </TabsContent>
             <TabsContent value="lists" className="flex-1 m-0">

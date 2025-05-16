@@ -20,22 +20,32 @@ export const useFetchTimeBoxes = () => {
   useEffect(() => {
     const fetchUser = async () => {
       const user = await getAuthenticatedUser();
+      console.log("Fetched user:", user);
       setUserId(user?.id || null);
     };
     fetchUser();
   }, []);
 
+  console.log("useFetchTimeBoxes - userId:", userId);
+
   return useQuery<TimeBox[], Error>({
     queryKey: userId ? timeBoxQueryKeys.user(userId) : timeBoxQueryKeys.all,
     queryFn: async () => {
-      if (!userId)
-        throw new Error("User not available for fetching time boxes");
+      console.log("Fetching time boxes...");
+      if (!userId) {
+        console.log("No user ID, returning default time boxes");
+        return defaultTimeBoxes;
+      }
+
       const { data: timeBoxData, error: timeBoxError } = await supabase
         .from("time_boxes")
         .select("*")
         .order("sort_order");
 
-      if (timeBoxError) throw timeBoxError;
+      if (timeBoxError) {
+        console.error("Error fetching time boxes:", timeBoxError);
+        throw timeBoxError;
+      }
 
       if (!timeBoxData || timeBoxData.length === 0) {
         console.log("No time boxes found, inserting defaults...");
@@ -49,9 +59,13 @@ export const useFetchTimeBoxes = () => {
         }
         return inserted || defaultTimeBoxes;
       }
+
+      console.log("Fetched time boxes:", timeBoxData);
       return timeBoxData;
     },
-    enabled: !!userId,
+    enabled: true,
+    placeholderData: (previousData) => previousData,
+    staleTime: 30000,
   });
 };
 

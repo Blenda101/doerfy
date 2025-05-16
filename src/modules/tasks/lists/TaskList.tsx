@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { TaskItem } from "../../components/TaskItem";
-import { ListHeader } from "../../components/ListHeader";
-import { InlineTaskEditor } from "../../components/InlineTaskEditor";
-import { Theme } from "../../utils/theme";
-import { List } from "../../hooks/useLists";
-import { AddListDialog } from "../../components/AddListDialog";
-import { Task } from "../../types/task";
-import { supabase } from "../../utils/supabaseClient";
+import { TaskItem } from "../../../components/TaskItem";
+import { ListHeader } from "../../../components/ListHeader";
+import { InlineTaskEditor } from "../../../components/InlineTaskEditor";
+import { Theme } from "../../../utils/theme";
+import { List } from "../../../hooks/useLists";
+import { AddListDialog } from "../../../components/AddListDialog";
+import { Task } from "../../../types/task";
+import { supabase } from "../../../utils/supabaseClient";
 import { toast } from "react-hot-toast";
-import { useTasks } from "../../contexts/TaskContext";
+import { useTasks } from "../../../contexts/TaskContext";
 
 interface TaskListProps {
   theme?: Theme;

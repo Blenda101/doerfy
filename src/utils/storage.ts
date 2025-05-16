@@ -2,6 +2,8 @@ import { TimeBox } from "../types/timeBox";
 import { BannerConfig } from "../components/BannerManager";
 import { supabase } from "./supabaseClient";
 import { defaultTimeBoxes } from "../data/timeBoxes";
+import { Task, TaskFromSupabase } from "../types/task";
+import { mapTaskFromSupabase } from "./taskMapper";
 
 // Define Json type for Supabase compatibility if not available from client
 type Json =
@@ -20,6 +22,32 @@ export function saveTimeBoxes(timeBoxes: TimeBox[]): void {
   localStorage.setItem(STORAGE_KEYS.TIME_BOXES, JSON.stringify(timeBoxes));
 }
 
+export async function loadTasks(): Promise<Task[]> {
+  try {
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+    if (userError || !user) {
+      throw new Error("No authenticated user found");
+    }
+
+    const { data: tasks, error: taskError } = await supabase
+      .from("tasks")
+      .select("*")
+      .eq("assignee", user.id)
+      .order("created_at", { ascending: false });
+
+    if (taskError) throw taskError;
+    console.log({ db: tasks });
+    return (tasks || []).map((task: TaskFromSupabase) =>
+      mapTaskFromSupabase(task, user.id),
+    );
+  } catch (error) {
+    console.error("Error loading tasks from Supabase:", error);
+    throw error;
+  }
+}
 export function loadTimeBoxes(): TimeBox[] {
   try {
     const stored = localStorage.getItem(STORAGE_KEYS.TIME_BOXES);
